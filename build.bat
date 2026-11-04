@@ -1,6 +1,6 @@
 @echo off
 REM ============================================================
-REM  Builds ControlWard.exe (a single file) from app.py.
+REM  Builds CtrlWard.exe (a single file) from app.py.
 REM  Needs a Python that has pip. NOTE: the Python bundled with
 REM  Spyder has NO pip, so this script hunts for a python.org
 REM  install (launcher, user folder, Program Files) before
@@ -10,7 +10,7 @@ REM  send that file to Muse.
 REM ============================================================
 cd /d %~dp0
 set LOG=%~dp0build_log.txt
-echo Control Ward build log - %DATE% %TIME% > "%LOG%"
+echo CtrlWard build log - %DATE% %TIME% > "%LOG%"
 
 set PY=
 py -3 -m pip --version >> "%LOG%" 2>&1 && set PY=py -3
@@ -61,8 +61,8 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo STEP 2 of 2: Building ControlWard.exe (about a minute)...
-%PY% -m PyInstaller --onefile --name ControlWard --add-data "tool.html;." app.py >> "%LOG%" 2>&1
+echo STEP 2 of 2: Building CtrlWard.exe (about a minute)...
+%PY% -m PyInstaller --onefile --name CtrlWard --icon ctrl_ward.ico --add-data "tool.html;." --add-data "ctrl_ward.ico;." app.py >> "%LOG%" 2>&1
 if errorlevel 1 (
   echo.
   echo STEP 2 FAILED - the build did not finish.
@@ -73,7 +73,7 @@ if errorlevel 1 (
 
 echo.
 echo ============================================================
-echo  Done! Your app is:  dist\ControlWard.exe
+echo  Done! Your app is:  dist\CtrlWard.exe
 echo  Copy that one file anywhere (Desktop is fine) and
 echo  double-click it to run. You can delete the rest.
 echo ============================================================

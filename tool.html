@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="icon" href="data:," />
-    <title>Control Ward</title>
+    <title>CtrlWard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -687,9 +687,9 @@
   <body>
     <main class="wrap">
       <div class="intro">
-        <h1>Control <span class="gold">Ward</span></h1>
+        <h1>Ctrl<span class="gold">Ward</span></h1>
         <p class="lede">
-          Blindability rankings + live draft companion. Before you lock in, this ranks every champion in the role by how safely they can be
+          CtrlWard rankings + live draft companion. Before you lock in, this ranks every champion in the role by how safely they can be
           picked blind — not their raw win rate, but the whole shape of their matchups:
           the win rate you'd expect against the enemy pool people actually play, how wildly
           those matchups swing, and how likely you are to get counterpicked.
@@ -802,7 +802,7 @@
         <div class="field">
           <label for="sort">Sort ranking by</label>
           <select id="sort">
-            <option value="score">Blindability score</option>
+            <option value="score">CtrlWard score</option>
             <option value="exp">Expected win rate</option>
             <option value="spreadAsc">Narrowest spread (most consistent)</option>
             <option value="spreadDesc">Widest spread (most volatile)</option>
@@ -867,14 +867,14 @@
 
       <div class="draft-list-note" id="draftListNote" hidden></div>
       <div class="list-head" aria-hidden="true">
-        <span style="text-align:center">#</span><span>Champion</span><span>Blindability</span>
+        <span style="text-align:center">#</span><span>Champion</span><span>CtrlWard</span>
         <span>Exp. WR</span><span>Spread</span><span id="headClear" style="display:none">1st clear</span><span>Counter risk</span><span>Worst counter</span><span></span>
       </div>
       <div id="list"></div>
       <div class="clear-note" id="clearNote" hidden></div>
 
       <section class="block">
-        <h2>How blindability works</h2>
+        <h2>How CtrlWard works</h2>
         <div class="how-grid">
           <div class="how-card">
             <h3>Expected win rate</h3>
@@ -929,7 +929,7 @@
 
       <footer>
         <p>
-          Framework based on “The math behind champion blindability” by MachineLoLing.
+          Framework based on MachineLoLing's champion blind-pick math.
           Champion roster, names and portraits: Riot Games Data Dragon, patch 16.21.1.
           Matchup figures are a clearly-labeled illustrative model — import your own CSV above for real numbers.
           Unofficial fan tool, not affiliated with or endorsed by Riot Games.
@@ -1299,13 +1299,13 @@
         panel.className = "enemy-panel show";
         panel.innerHTML = "<h2>They locked " + esc(name(e)) + " — your best answers in " + ROLE_LABEL[state.role] + "</h2>"
           + '<p class="sub">Ranked by your win rate into ' + esc(name(e)) + " (" + esc(ARCH_LABEL[DATA.champs[e].arch])
-          + ", picked in " + fmt(pool[e].pick) + '% of games). Blindability shown so you can weigh a one-trick answer against a pick that stays safe if the rest of their comp counters you.</p>'
+          + ", picked in " + fmt(pool[e].pick) + '% of games). CtrlWard score shown so you can weigh a one-trick answer against a pick that stays safe if the rest of their comp counters you.</p>'
           + top.map((a, i) =>
             '<button type="button" class="answer" data-id="' + a.id + '">'
             + '<span class="rank">' + (i + 1) + "</span>" + icon(a.id)
             + '<span><span class="an">' + esc(name(a.id)) + "</span>"
             + (myPool.has(a.id) ? '<span class="pool-tag">In your pool</span>' : "")
-            + '<span class="am" style="display:block">Blindability ' + a.s.score + " · expected WR " + fmt(a.s.exp) + "% overall</span></span>"
+            + '<span class="am" style="display:block">CtrlWard ' + a.s.score + " · expected WR " + fmt(a.s.exp) + "% overall</span></span>"
             + '<span class="aw ' + wrClass(a.v) + '">' + fmt(a.v) + "%</span></button>").join("");
         panel.querySelectorAll(".answer").forEach((b) =>
           b.addEventListener("click", () => selectChamp(b.dataset.id)));
@@ -1397,7 +1397,7 @@
           + fmt(DATA.pools[state.role][id].pick) + "% of " + ROLE_LABEL[state.role] + " games</div>"
           + '<p class="verdict">' + verdict(s) + "</p>"
           + '<div class="big-stats">'
-          + '<div class="big-stat"><div class="v">' + s.score + '</div><div class="k">Blindability</div><div class="d">out of 99, higher = safer blind</div></div>'
+          + '<div class="big-stat"><div class="v">' + s.score + '</div><div class="k">CtrlWard</div><div class="d">out of 99, higher = safer blind</div></div>'
           + '<div class="big-stat"><div class="v ' + wrClass(s.exp) + '">' + fmt(s.exp) + '%</div><div class="k">Expected WR</div><div class="d">pick-rate weighted, blind</div></div>'
           + '<div class="big-stat"><div class="v">±' + fmt(s.spread) + '</div><div class="k">Spread</div><div class="d">how swingy the matchups are</div></div>'
           + '<div class="big-stat"><div class="v">' + fmt(s.risk, 0) + '%</div><div class="k">Counter risk</div><div class="d">chance of a sub-47% matchup</div></div>'
@@ -1541,7 +1541,7 @@
         }
         for (const p of syn.parts) if (p.pts >= 4) reasons.push(p);
         if (!counterpartLocked && blind.score >= 60) {
-          reasons.push({ pts: 8, text: "Safe blind — " + blind.score + " blindability with only ±" + fmt(blind.spread) + " spread" });
+          reasons.push({ pts: 8, text: "Safe blind — " + blind.score + " CtrlWard score with only ±" + fmt(blind.spread) + " spread" });
         }
         reasons.sort((a, b) => b.pts - a.pts);
         const picked = reasons.slice(0, 2).map((r) => r.text);
@@ -1855,7 +1855,7 @@
         const blob = new Blob([csv], { type: "text/csv" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "blindability-" + state.role + "-matchups.csv";
+        a.download = "ctrlward-" + state.role + "-matchups.csv";
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       }

@@ -1,18 +1,17 @@
-# Control Ward
+# CtrlWard
 
 A champion blind-pick and **live draft** companion for League of Legends,
-built from the math in MachineLoLing's *"The math behind champion
-blindability"* — expected win rate when blind picking, matchup spread, and
+built from MachineLoLing's champion blind-pick math — expected win rate when blind picking, matchup spread, and
 counter risk for all 173 champions across all 5 roles, plus a Live Draft mode
 that recommends picks in real time as a real champ select unfolds.
 
 ## ⬇️ Download
 
-Go to **[Releases](../../releases/latest)** and download **ControlWard.exe**.
+Go to **[Releases](../../releases/latest)** and download **CtrlWard.exe**.
 That's the whole app — one file, no installer, no Python needed.
 
 1. Keep your League client open and logged in.
-2. Double-click `ControlWard.exe`.
+2. Double-click `CtrlWard.exe`.
    Windows SmartScreen will warn because the app is unsigned:
    **More info → Run anyway**.
 3. A window opens. The pill in the top-right shows the connection state;
@@ -25,7 +24,7 @@ Requirements: Windows, a League of Legends client, internet on first run
 
 ## What it does
 
-- **Blindability rankings** for every champion in every role: expected win
+- **CtrlWard rankings** for every champion in every role: expected win
   rate, matchup spread, counter risk, worst counter, per-champion bell curve
   and verdict, Jungle first-clear times, personal pool stars.
 - **Live Draft**: watches *your* champ select through your own client's local

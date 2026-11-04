@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Control Ward — the blindability and live-draft tool as a downloadable Windows app,
+CtrlWard — the blind-pick and live-draft tool as a downloadable Windows app,
 with TRUE LIVE DRAFTING.
 
 Double-click the .exe (or run `python app.py`) and it:
@@ -62,6 +62,13 @@ def find_tool_html():
             return candidate
     return None
 
+def find_icon():
+    for base in (app_dir(), bundle_dir()):
+        candidate = os.path.join(base, "ctrl_ward.ico")
+        if os.path.exists(candidate):
+            return candidate
+    return None
+
 CACHE_DIR = os.path.join(app_dir(), "asset_cache")
 
 # ---------------------------------------------------------------------------
@@ -77,8 +84,8 @@ CACHE_DIR = os.path.join(app_dir(), "asset_cache")
 # or bake it into DEFAULT_UPDATE_REPO at build time. Empty = checks disabled.
 # ---------------------------------------------------------------------------
 
-APP_VERSION = "1.1.0"
-DEFAULT_UPDATE_REPO = "lockwood-labs/control-ward"
+APP_VERSION = "1.1.1"
+DEFAULT_UPDATE_REPO = "lockwood-labs/CtrlWard"
 
 def load_update_repo():
     cfg = os.path.join(app_dir(), "update_config.json")
@@ -111,7 +118,7 @@ def http_get_bytes(url, timeout=20):
     mid-transfer (seen truncating at exactly 16 KB). If a response comes
     back short, keep re-requesting the missing tail with Range headers
     until the body is complete."""
-    base_headers = {"User-Agent": "ControlWard/1.0",
+    base_headers = {"User-Agent": "CtrlWard/1.0",
                     "Accept-Encoding": "identity",
                     "Connection": "close"}
     data = b""
@@ -427,6 +434,11 @@ def check_for_updates():
 LIVE_SCRIPT = """
 <script>
 (function(){
+  var fav = document.querySelector("link[rel~='icon']") || document.createElement('link');
+  fav.rel = 'icon';
+  fav.type = 'image/x-icon';
+  fav.href = '/favicon.ico';
+  document.head.appendChild(fav);
   var pill = document.createElement('div');
   pill.id = 'lcu-pill';
   pill.textContent = '○ Connecting to app…';
@@ -506,6 +518,7 @@ def fetch_asset(kind, champ_id):
 
 class Handler(BaseHTTPRequestHandler):
     tool_bytes = b""
+    icon_bytes = None
     protocol_version = "HTTP/1.1"
 
     def log_message(self, *a):  # quiet
@@ -525,6 +538,11 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path in ("/", "/index.html", "/tool.html"):
                 self._send(200, self.tool_bytes, "text/html; charset=utf-8")
+            elif path == "/favicon.ico":
+                if self.icon_bytes:
+                    self._send(200, self.icon_bytes, "image/x-icon")
+                else:
+                    self._send(404, b"no icon", "text/plain")
             elif path == "/api/state":
                 body = json.dumps(get_state()).encode()
                 self._send(200, body, "application/json")
@@ -549,7 +567,7 @@ def build_tool_bytes():
     path = find_tool_html()
     if not path:
         raise SystemExit("tool.html not found next to the app. Keep tool.html "
-                         "in the same folder as ControlWard.exe / app.py.")
+                         "in the same folder as CtrlWard.exe / app.py.")
     with open(path, "r", encoding="utf-8") as f:
         html = f.read()
     idx = html.lower().rfind("</body>")
@@ -594,7 +612,7 @@ def open_app_window(url):
 # ---------------------------------------------------------------------------
 
 def main():
-    ap = argparse.ArgumentParser(description="Control Ward (read-only live draft)")
+    ap = argparse.ArgumentParser(description="CtrlWard (read-only live draft)")
     ap.add_argument("--demo", action="store_true", help="Simulated champ select")
     ap.add_argument("--port", type=int, default=0, help="Fixed port (default: automatic)")
     ap.add_argument("--no-open", action="store_true", help="Server only, no window")
@@ -602,6 +620,10 @@ def main():
     args = ap.parse_args()
 
     Handler.tool_bytes = build_tool_bytes()
+    icon_path = find_icon()
+    if icon_path:
+        with open(icon_path, "rb") as f:
+            Handler.icon_bytes = f.read()
 
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     port = server.server_address[1]
@@ -618,7 +640,7 @@ def main():
             pass
     threading.Thread(target=_refresh_version, daemon=True).start()
 
-    print(f"Control Ward running at {url}")
+    print(f"CtrlWard running at {url}")
     print("Read-only: it watches champ select and recommends. It never picks or locks.")
 
     if args.demo:
