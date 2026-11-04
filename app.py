@@ -78,7 +78,7 @@ CACHE_DIR = os.path.join(app_dir(), "asset_cache")
 # ---------------------------------------------------------------------------
 
 APP_VERSION = "1.1.0"
-DEFAULT_UPDATE_REPO = ""
+DEFAULT_UPDATE_REPO = "lockwood-labs/control-ward"
 
 def load_update_repo():
     cfg = os.path.join(app_dir(), "update_config.json")
