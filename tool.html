@@ -1,0 +1,1909 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <link rel="icon" href="data:," />
+    <title>Control Ward</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      /* PROJECT is the single, permanent theme: near-black steel, neon
+         orange and cyan, clipped corners and grid lines. */
+      :root {
+        --bg: #090d12;
+        --bg-image: linear-gradient(rgba(45, 217, 232, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(45, 217, 232, 0.055) 1px, transparent 1px), repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0 1px, transparent 1px 4px), radial-gradient(760px 360px at 85% -40px, rgba(255, 106, 0, 0.14), transparent 60%);
+        --bg-size: 30px 30px, 30px 30px, auto, auto;
+        --panel: #121922;
+        --panel-2: #0c1219;
+        --ink: #edf4f8;
+        --ink-soft: #a7bac8;
+        --line: #2b3b4a;
+        --gold: #ff7a1a;
+        --gold-strong: #ffa25e;
+        --gold-soft: #2c1a0c;
+        --teal: #2dd9e8;
+        --good: #4ade80;
+        --ok: #a3d65c;
+        --warn: #fbbf24;
+        --bad: #fb7185;
+        --chip: #1b2836;
+        --shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+        --accent2: #2dd9e8;
+        --accent-grad: linear-gradient(90deg, #ff6a00, #ffb020 60%, #2dd9e8);
+        --font-display: "Orbitron", "Segoe UI", system-ui, sans-serif;
+        --radius-card: 3px;
+        --radius-btn: 2px;
+        --radius-input: 2px;
+        --heading-transform: uppercase;
+        --heading-spacing: 0.06em;
+        --btn-bg: #ff6a00;
+        --btn-ink: #140a02;
+        --glow: 0 0 0 1px var(--gold), 0 0 18px rgba(255, 106, 0, 0.35);
+        color-scheme: dark;
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background-color: var(--bg);
+        background-image: var(--bg-image);
+        background-size: var(--bg-size);
+        background-attachment: fixed;
+        color: var(--ink);
+        font-family: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+        font-size: 16px;
+        line-height: 1.45;
+        transition: background-color 0.25s ease, color 0.25s ease;
+      }
+      h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; text-transform: var(--heading-transform); letter-spacing: var(--heading-spacing); }
+      button, input, select, textarea { font: inherit; color: inherit; }
+      button { cursor: pointer; }
+      img { display: block; }
+      .wrap { max-width: 1060px; margin: 0 auto; padding: 20px 16px 48px; }
+
+      /* ---------- intro ---------- */
+      .intro { padding: 10px 0 4px; }
+      .intro h1 { font-size: clamp(28px, 5.4vw, 42px); line-height: 1.12; }
+      .intro h1 .gold { color: var(--gold-strong); }
+      .lede { max-width: 66ch; color: var(--ink-soft); margin: 10px 0 14px; font-size: 17px; }
+      .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+      .badge {
+        font-size: 13px; font-weight: 600; padding: 4px 10px;
+        border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+      }
+      .badge.model { border-color: var(--gold); color: var(--gold-strong); background: var(--gold-soft); }
+
+      /* PROJECT signature: clipped corners on the main action controls */
+      .role-btn, .btn, .ugg-link {
+        clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        border-radius: 0;
+      }
+
+      /* ---------- role tabs ---------- */
+      .roles { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 14px; }
+      .role-btn {
+        border: 1px solid var(--line); background: var(--panel); color: var(--ink-soft);
+        padding: 9px 18px; border-radius: var(--radius-btn); font-weight: 700; letter-spacing: 0.04em;
+        text-transform: uppercase; font-size: 14px;
+      }
+      .role-btn[aria-pressed="true"] {
+        background: var(--btn-bg); color: var(--btn-ink); border-color: var(--gold);
+      }
+      .role-btn .n { opacity: 0.7; font-weight: 600; margin-left: 4px; }
+
+      /* ---------- controls ---------- */
+      .controls {
+        display: grid; gap: 10px; grid-template-columns: 1fr;
+        background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card);
+        padding: 14px; box-shadow: var(--shadow);
+      }
+      @media (min-width: 760px) {
+        .controls { grid-template-columns: 1.4fr 1fr 1fr auto; align-items: end; }
+      }
+      .field label { display: block; font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 5px; }
+      .field input, .field select {
+        width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius-input);
+        background: var(--panel-2); color: var(--ink);
+      }
+      .toggle {
+        display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line);
+        background: var(--panel-2); border-radius: var(--radius-btn); padding: 9px 12px; font-weight: 600;
+      }
+      .toggle[aria-pressed="true"] { border-color: var(--gold); background: var(--gold-soft); color: var(--gold-strong); }
+      .poolbar { display: none; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+      .poolbar.show { display: flex; }
+      .poolbar .lbl { font-size: 13px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); }
+      .pool-chip {
+        display: inline-flex; align-items: center; gap: 7px; background: var(--chip);
+        border: 1px solid var(--line); border-radius: 999px; padding: 3px 6px 3px 4px; font-weight: 600; font-size: 14px;
+      }
+      .pool-chip img { width: 24px; height: 24px; border-radius: 50%; }
+      .pool-chip button { border: 0; background: transparent; font-size: 16px; line-height: 1; padding: 2px 5px; color: var(--ink-soft); border-radius: 50%; }
+      .pool-empty { color: var(--ink-soft); font-size: 14px; }
+
+      /* ---------- filters (clear time + win percentage only) ---------- */
+      .filter-panel {
+        margin-top: 12px; background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius-card); padding: 14px; box-shadow: var(--shadow);
+      }
+      .filter-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+      .filter-title { font-size: 12.5px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-soft); }
+      .filter-reset {
+        border: 1px solid var(--line); background: var(--panel-2); color: var(--ink);
+        border-radius: var(--radius-btn); padding: 7px 12px; font-weight: 700; font-size: 13.5px;
+      }
+      .filter-reset:disabled { opacity: 0.5; cursor: default; }
+      .filter-reset:not(:disabled) { border-color: var(--gold); color: var(--gold-strong); background: var(--gold-soft); }
+      .filter-grid { display: grid; gap: 10px; grid-template-columns: 1fr; }
+      @media (min-width: 760px) { .filter-grid { grid-template-columns: 1fr 1fr; } }
+      .filter-option { border: 1px solid var(--line); background: var(--panel-2); border-radius: var(--radius-input); padding: 12px; }
+      .filter-option[hidden] { display: none; }
+      .filter-option-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 9px; }
+      .filter-option-label { font-weight: 700; font-size: 15.5px; }
+      .filter-toggle { padding: 6px 12px; font-size: 13.5px; background: var(--panel); }
+      .filter-field label { display: block; font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 5px; }
+      .filter-field select {
+        width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius-input);
+        background: var(--panel); color: var(--ink);
+      }
+      .filter-field select:disabled { opacity: 0.55; cursor: not-allowed; }
+      .filter-hint { margin: 8px 0 0; font-size: 13px; color: var(--ink-soft); }
+
+      /* ---------- ranking rows ---------- */
+      .list-head {
+        display: none;
+        grid-template-columns: 44px minmax(170px, 1.6fr) 118px 92px 92px 104px minmax(150px, 1fr) 40px;
+        gap: 10px; padding: 18px 12px 6px; font-size: 12.5px; font-weight: 700;
+        letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft);
+      }
+      @media (min-width: 860px) { .list-head { display: grid; } }
+      .row {
+        display: grid; gap: 8px 10px; align-items: center;
+        grid-template-columns: 44px 1fr auto;
+        grid-template-areas: "rank champ score" "stats stats stats" "counter counter pool";
+        width: 100%; text-align: left; background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius-card); padding: 12px; margin-top: 10px;
+      }
+      @media (min-width: 860px) {
+        .row {
+          grid-template-columns: 44px minmax(170px, 1.6fr) 118px 92px 92px 104px minmax(150px, 1fr) 40px;
+          grid-template-areas: "rank champ score exp spread risk counter pool";
+          padding: 10px 12px;
+        }
+      }
+      .row:hover { border-color: var(--gold); }
+      .row.selected { border-color: var(--gold); box-shadow: var(--glow); }
+      .rank { grid-area: rank; font-family: var(--font-display); font-size: 19px; color: var(--ink-soft); text-align: center; }
+      .champ { grid-area: champ; display: flex; align-items: center; gap: 11px; min-width: 0; }
+      .champ img { width: 46px; height: 46px; border-radius: var(--radius-input); border: 1px solid var(--line); }
+      .champ .nm { font-weight: 700; font-size: 17px; line-height: 1.15; }
+      .champ .arch { font-size: 12.5px; color: var(--ink-soft); letter-spacing: 0.04em; text-transform: uppercase; }
+      .score-cell { grid-area: score; }
+      .score-num { font-family: var(--font-display); font-size: 23px; line-height: 1; color: var(--gold-strong); }
+      .score-bar { height: 6px; background: var(--chip); border-radius: 3px; margin-top: 5px; overflow: hidden; width: 100%; min-width: 74px; }
+      .score-bar i { display: block; height: 100%; background: var(--accent-grad); border-radius: 3px; }
+      .stat { min-width: 0; }
+      .stat .v { font-weight: 700; font-size: 16.5px; }
+      .stat .k { font-size: 12px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; }
+      .row .mobile-stats { grid-area: stats; display: flex; gap: 18px; flex-wrap: wrap; }
+      @media (min-width: 860px) {
+        .row .mobile-stats { display: contents; }
+        .row .stat .k, .row .counter-cell .k { display: none; }
+      }
+      .exp-cell { grid-area: exp; } .spread-cell { grid-area: spread; } .risk-cell { grid-area: risk; }
+      .counter-cell { grid-area: counter; display: flex; align-items: center; gap: 8px; min-width: 0; }
+      .counter-cell img { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); }
+      .counter-cell .cn { font-size: 13.5px; line-height: 1.2; }
+      .counter-cell .cw { font-weight: 700; color: var(--bad); font-size: 13.5px; }
+      .counter-cell .k { font-size: 11.5px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; display: block; }
+      .pool-btn {
+        grid-area: pool; border: 1px solid var(--line); background: var(--panel-2); border-radius: 50%;
+        width: 34px; height: 34px; font-size: 17px; line-height: 1; color: var(--ink-soft); justify-self: end;
+      }
+      .pool-btn.on { color: var(--gold-strong); border-color: var(--gold); background: var(--gold-soft); }
+      .wr-good { color: var(--good); } .wr-ok { color: var(--ok); }
+      .wr-warn { color: var(--warn); } .wr-bad { color: var(--bad); }
+
+      /* ---------- first clear (jungle only) ---------- */
+      .clear-cell { grid-area: clear; }
+      .clr-vfast { color: var(--good); } .clr-fast { color: var(--teal); }
+      .clr-avg { color: var(--warn); } .clr-slow { color: var(--bad); }
+      .clr-na { color: var(--ink-soft); font-size: 13px !important; font-weight: 600 !important; }
+      @media (min-width: 860px) {
+        .list-head.has-clear {
+          grid-template-columns: 44px minmax(150px, 1.4fr) 106px 82px 82px 74px 94px minmax(128px, 1fr) 40px;
+        }
+        #list.has-clear .row {
+          grid-template-columns: 44px minmax(150px, 1.4fr) 106px 82px 82px 74px 94px minmax(128px, 1fr) 40px;
+          grid-template-areas: "rank champ score exp spread clear risk counter pool";
+        }
+      }
+      .clear-note {
+        margin-top: 14px; background: var(--panel-2); border: 1px solid var(--line);
+        border-radius: var(--radius-card); padding: 12px 15px; color: var(--ink-soft); font-size: 14px;
+      }
+      .clear-note b, .clear-note strong { color: var(--ink); }
+      .clear-banner {
+        display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+        margin-top: 14px; background: var(--panel-2); border: 1px solid var(--gold);
+        border-radius: var(--radius-input); padding: 13px 16px;
+      }
+      .clear-banner .cb-main { display: flex; align-items: baseline; gap: 9px; flex: none; }
+      .clear-banner .cb-v { font-family: var(--font-display); font-size: 30px; line-height: 1; }
+      .clear-banner .cb-band {
+        font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+        border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; background: var(--panel); color: var(--ink);
+      }
+      .clear-banner .cb-k { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+      .clear-banner .cb-d { font-size: 14.5px; margin-top: 2px; max-width: 56ch; }
+      .empty-note { padding: 26px 14px; color: var(--ink-soft); text-align: center; }
+
+      /* ---------- enemy answers ---------- */
+      .enemy-panel {
+        display: none; margin-top: 16px; background: var(--panel); border: 1px solid var(--gold);
+        border-radius: var(--radius-card); padding: 16px; box-shadow: var(--shadow);
+      }
+      .enemy-panel.show { display: block; }
+      .enemy-panel h2 { font-size: 21px; }
+      .enemy-panel .sub { color: var(--ink-soft); margin: 4px 0 12px; }
+      .answer {
+        display: grid; grid-template-columns: 30px 40px 1fr auto; gap: 10px; align-items: center;
+        padding: 8px 6px; border-top: 1px solid var(--line); width: 100%; background: none; border-left: 0; border-right: 0; border-bottom: 0; text-align: left; color: var(--ink);
+      }
+      .answer img { width: 40px; height: 40px; border-radius: var(--radius-input); border: 1px solid var(--line); }
+      .answer .an { font-weight: 700; }
+      .answer .am { font-size: 13px; color: var(--ink-soft); }
+      .answer .aw { font-family: var(--font-display); font-size: 21px; }
+      .pool-tag { font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--gold-strong); background: var(--gold-soft); border: 1px solid var(--gold); border-radius: 999px; padding: 1px 7px; margin-left: 7px; vertical-align: 2px; }
+
+      /* ---------- live draft ---------- */
+      .draft-panel {
+        margin-top: 18px; background: var(--panel); border: 2px solid var(--gold);
+        border-radius: var(--radius-card); padding: 16px; box-shadow: var(--shadow);
+      }
+      .draft-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+      .draft-head h2 { font-size: 24px; }
+      .draft-head .sub { color: var(--ink-soft); margin: 5px 0 0; max-width: 62ch; }
+      .draft-toggle-btn {
+        border: 1px solid var(--gold); background: var(--btn-bg); color: var(--btn-ink);
+        border-radius: var(--radius-btn); padding: 10px 18px; font-weight: 700; flex: none;
+      }
+      .draft-toggle-btn[aria-pressed="true"] { background: transparent; color: var(--gold-strong); }
+      .draft-honesty { margin: 10px 0 0; font-size: 13.5px; color: var(--ink-soft); }
+      .draft-honesty b, .draft-honesty strong { color: var(--ink); }
+      .draft-body { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 14px; }
+      .draft-body[hidden] { display: none; }
+      .draft-role-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; justify-content: space-between; }
+      .draft-role-row .field { min-width: 180px; }
+      .draft-role-row .field select {
+        width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius-input);
+        background: var(--panel-2); color: var(--ink);
+      }
+      .draft-status { font-size: 14px; color: var(--ink-soft); font-weight: 600; }
+      .draft-groups { display: grid; gap: 12px; grid-template-columns: 1fr; margin-top: 14px; }
+      @media (min-width: 860px) { .draft-groups { grid-template-columns: 1fr 1fr; } .draft-group.ban-g { grid-column: 1 / -1; } }
+      .draft-group { border: 1px solid var(--line); background: var(--panel-2); border-radius: var(--radius-input); padding: 12px; min-width: 0; }
+      .draft-group.enemy-g { border-color: var(--bad); }
+      .draft-group.ban-g { border-color: var(--ink-soft); }
+      .draft-group-label { font-weight: 700; font-size: 15.5px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+      .draft-group-label .cnt { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+      .draft-chips { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0; min-height: 8px; }
+      .draft-chip {
+        display: inline-flex; align-items: center; gap: 7px; background: var(--chip);
+        border: 1px solid var(--line); border-radius: 999px; padding: 3px 6px 3px 4px; font-weight: 600; font-size: 14px;
+      }
+      .draft-chip img { width: 24px; height: 24px; border-radius: 50%; }
+      .draft-chip button { border: 0; background: transparent; font-size: 16px; line-height: 1; padding: 2px 5px; color: var(--ink-soft); border-radius: 50%; }
+      .draft-chips-empty { color: var(--ink-soft); font-size: 13.5px; }
+      /* ---------- draft trays (client-style team strips) ---------- */
+      .draft-slot {
+        width: 64px; flex: 0 0 64px; display: flex; flex-direction: column; padding: 0; overflow: hidden;
+        border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink);
+        text-align: center; position: relative; font: inherit;
+      }
+      button.draft-slot { cursor: pointer; }
+      button.draft-slot:hover, button.draft-slot:focus-visible { border-color: var(--gold); }
+      .draft-group.ally-g .draft-slot.filled { border-color: var(--teal); }
+      .draft-group.enemy-g .draft-slot.filled { border-color: var(--bad); }
+      .draft-slot img { width: 100%; height: 54px; object-fit: cover; }
+      .draft-slot .slot-name {
+        display: block; width: 100%; padding: 3px 2px 4px; font-size: 10.5px; font-weight: 700; line-height: 1.15;
+        background: var(--panel-2); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        border-top: 1px solid var(--line);
+      }
+      .draft-slot .slot-x {
+        position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%;
+        background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+        font-size: 13px; line-height: 16px; text-align: center;
+      }
+      .draft-slot.ban-slot img { filter: grayscale(0.65); }
+      .draft-slot.ban-slot .slot-x { color: var(--bad); border-color: var(--bad); }
+      .draft-slot.empty { border-style: dashed; }
+      .draft-slot .slot-empty-icon {
+        height: 54px; display: flex; align-items: center; justify-content: center;
+        font-size: 19px; color: var(--ink-soft); background: var(--panel-2);
+      }
+      .draft-slot.empty .slot-name { color: var(--ink-soft); font-weight: 600; }
+      /* ---------- champion grid (client-style pick grid) ---------- */
+      .draft-board { margin-top: 14px; border: 1px solid var(--line); background: var(--panel-2); border-radius: var(--radius-input); padding: 12px; }
+      .draft-target-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+      .draft-target-label { font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+      .draft-targets { display: flex; flex-wrap: wrap; gap: 6px; }
+      .draft-target-btn {
+        border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+        border-radius: var(--radius-btn); padding: 8px 14px; font-weight: 700; font-size: 14px;
+      }
+      .draft-target-btn[aria-pressed="true"] { background: var(--btn-bg); color: var(--btn-ink); border-color: var(--gold); }
+      .draft-grid-hint { font-size: 13.5px; color: var(--ink-soft); font-weight: 600; }
+      .draft-grid-search { margin-top: 10px; }
+      .draft-grid-search input {
+        width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius-input);
+        background: var(--panel); color: var(--ink);
+      }
+      .draft-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px;
+        max-height: 352px; overflow-y: auto; overflow-x: hidden; margin-top: 10px; padding: 2px;
+      }
+      @media (max-width: 480px) { .draft-grid { grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); } }
+      .draft-tile {
+        position: relative; display: flex; flex-direction: column; padding: 0; overflow: hidden; min-width: 0;
+        border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink);
+        text-align: center; font: inherit;
+      }
+      button.draft-tile { cursor: pointer; }
+      button.draft-tile:hover, button.draft-tile:focus-visible { border-color: var(--gold); box-shadow: var(--glow); }
+      .draft-tile img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+      .draft-tile .tile-name {
+        display: block; width: 100%; padding: 4px 2px 5px; font-size: 11px; font-weight: 700; line-height: 1.2;
+        background: var(--panel-2); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        border-top: 1px solid var(--line);
+      }
+      .draft-tile:disabled { cursor: not-allowed; }
+      .draft-tile.is-picked { opacity: 0.5; }
+      .draft-tile.is-picked img { filter: grayscale(0.9); }
+      .draft-tile.is-banned { opacity: 0.68; border-color: var(--bad); }
+      .draft-tile.is-banned img { filter: grayscale(0.75); }
+      .draft-tile .tile-state {
+        position: absolute; top: 3px; left: 3px; z-index: 2; font-size: 9.5px; font-weight: 800;
+        letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 5px; border-radius: 999px;
+        background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+      }
+      .draft-tile.is-banned .tile-state { color: var(--bad); border-color: var(--bad); }
+      .draft-tile .tile-ban-x {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        font-size: 40px; font-weight: 800; line-height: 1; color: var(--bad); pointer-events: none;
+      }
+      .draft-grid-empty { grid-column: 1 / -1; color: var(--ink-soft); font-size: 14px; padding: 10px 4px; }
+      .draft-picker { position: relative; }
+      .draft-picker input {
+        width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: var(--radius-input);
+        background: var(--panel); color: var(--ink);
+      }
+      .draft-picker input:disabled { opacity: 0.55; cursor: not-allowed; }
+      .draft-results {
+        position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30;
+        background: var(--panel); border: 1px solid var(--gold); border-radius: var(--radius-input);
+        box-shadow: var(--shadow); max-height: 264px; overflow-y: auto; padding: 4px;
+      }
+      .draft-results[hidden] { display: none; }
+      .draft-result {
+        display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+        border: 0; background: transparent; color: var(--ink); padding: 6px 8px; border-radius: var(--radius-input); font-weight: 600;
+      }
+      .draft-result:hover, .draft-result:focus-visible { background: var(--gold-soft); }
+      .draft-result img { width: 30px; height: 30px; border-radius: var(--radius-input); border: 1px solid var(--line); }
+      .draft-result .ra { font-size: 12.5px; color: var(--ink-soft); font-weight: 600; }
+      .draft-import { margin-top: 14px; border: 1px solid var(--line); background: var(--panel-2); border-radius: var(--radius-input); padding: 12px; }
+      .draft-import label { display: block; font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 5px; }
+      .draft-import textarea {
+        width: 100%; min-height: 54px; border: 1px solid var(--line); border-radius: var(--radius-input);
+        background: var(--panel); color: var(--ink); padding: 9px 10px; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px;
+      }
+      .draft-import-status { margin-top: 8px; font-weight: 600; font-size: 14px; }
+      .draft-import-status.err { color: var(--bad); }
+      .draft-recs-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+      .draft-recs-head h3 { font-size: 20px; }
+      .draft-recs-head .wts { font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+      .draft-top { display: grid; gap: 12px; grid-template-columns: 1fr; margin-top: 12px; }
+      @media (min-width: 860px) { .draft-top { grid-template-columns: repeat(3, 1fr); } }
+      .draft-card {
+        background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-card);
+        padding: 14px; text-align: left; color: var(--ink); width: 100%;
+      }
+      .draft-card:hover { border-color: var(--gold); }
+      .draft-card.first { border-color: var(--gold); box-shadow: var(--glow); }
+      .draft-card-top { display: flex; gap: 11px; align-items: center; }
+      .draft-card-top img { width: 52px; height: 52px; border-radius: var(--radius-input); border: 1px solid var(--line); }
+      .draft-card .dn { font-weight: 700; font-size: 18px; line-height: 1.15; }
+      .draft-card .da { font-size: 12.5px; color: var(--ink-soft); letter-spacing: 0.04em; text-transform: uppercase; }
+      .draft-card .dscore { margin-left: auto; text-align: right; flex: none; }
+      .draft-card .dscore .v { font-family: var(--font-display); font-size: 30px; line-height: 1; color: var(--gold-strong); }
+      .draft-card .dscore .k { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+      .bd-row { display: grid; grid-template-columns: 86px 1fr auto; gap: 8px; align-items: center; margin-top: 8px; font-size: 13.5px; }
+      .bd-row .bk { font-weight: 700; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); }
+      .bd-row .bv { font-weight: 700; white-space: nowrap; }
+      .bd-bar { height: 6px; background: var(--chip); border-radius: 3px; overflow: hidden; }
+      .bd-bar i { display: block; height: 100%; background: var(--accent-grad); border-radius: 3px; }
+      .draft-reasons { margin: 11px 0 0; padding: 0; list-style: none; }
+      .draft-reasons li { font-size: 14px; padding: 5px 0 0; color: var(--ink); }
+      .draft-reasons li::before { content: "▸ "; color: var(--gold-strong); font-weight: 700; }
+      .draft-empty { margin-top: 12px; color: var(--ink-soft); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-input); padding: 12px 14px; }
+      .draft-list-note {
+        margin-top: 14px; background: var(--gold-soft); border: 1px solid var(--gold); color: var(--gold-strong);
+        border-radius: var(--radius-input); padding: 9px 13px; font-weight: 700; font-size: 14px;
+      }
+      .draft-list-note[hidden] { display: none; }
+      .row.unavailable { opacity: 0.55; }
+      .row.unavailable .champ img { filter: grayscale(0.85); }
+      .unavail-tag {
+        display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+        color: var(--bad); border: 1px solid var(--bad); border-radius: 999px; padding: 0 7px; margin-left: 7px; vertical-align: 2px;
+      }
+      .draft-score-tag { color: var(--gold-strong); font-weight: 700; }
+
+      /* ---------- detail ---------- */
+      .detail {
+        display: none; margin-top: 10px; background: var(--panel); border: 1px solid var(--line);
+        border-radius: var(--radius-card); overflow: hidden; box-shadow: var(--shadow);
+      }
+      .detail.show { display: block; }
+      .detail-hero { display: grid; grid-template-columns: 1fr; }
+      @media (min-width: 700px) { .detail-hero { grid-template-columns: 218px 1fr; } }
+      .detail-hero .art { position: relative; min-height: 190px; background: var(--panel-2); }
+      .detail-hero .art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+      @media (max-width: 699px) { .detail-hero .art { height: 190px; } }
+      .detail-main { padding: 18px; }
+      .detail-main h2 { font-size: 28px; line-height: 1.15; }
+      .detail-main .sub { color: var(--ink-soft); margin-top: 3px; }
+      .verdict { font-size: 17px; margin: 10px 0 0; max-width: 58ch; }
+      .big-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px; }
+      @media (min-width: 700px) { .big-stats { grid-template-columns: repeat(4, 1fr); } }
+      .big-stat { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-input); padding: 11px 13px; }
+      .big-stat .v { font-family: var(--font-display); font-size: 25px; line-height: 1.05; }
+      .big-stat .k { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-top: 3px; }
+      .big-stat .d { font-size: 13px; color: var(--ink-soft); margin-top: 3px; }
+      .chart-box { padding: 4px 18px 8px; }
+      .chart-box h3, .match-cols h3 { font-size: 18px; margin-bottom: 4px; }
+      .chart-box .cap { color: var(--ink-soft); font-size: 14px; margin: 0 0 8px; }
+      .chart-box svg { width: 100%; height: auto; display: block; }
+      .match-cols { display: grid; gap: 18px; grid-template-columns: 1fr; padding: 8px 18px 20px; }
+      @media (min-width: 700px) { .match-cols { grid-template-columns: 1fr 1fr; } }
+      .mrow { display: grid; grid-template-columns: 34px 1fr auto auto; gap: 10px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
+      .mrow img { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); }
+      .mrow .mn { font-weight: 600; }
+      .mrow .mp { color: var(--ink-soft); font-size: 13px; }
+      .mrow .mw { font-weight: 700; font-size: 16px; }
+      .close-btn { float: right; border: 1px solid var(--line); background: var(--panel-2); border-radius: 50%; width: 32px; height: 32px; font-size: 15px; color: var(--ink); }
+      .ugg-link {
+        display: inline-flex; align-items: center; gap: 8px; margin-top: 14px;
+        background: var(--btn-bg); color: var(--btn-ink); text-decoration: none;
+        padding: 10px 16px; border-radius: var(--radius-btn); font-weight: 700; font-size: 15px;
+      }
+      .ugg-link .ext { font-size: 13px; opacity: 0.85; }
+      .ugg-note { font-size: 13px; color: var(--ink-soft); margin-top: 7px; }
+
+      /* ---------- sections ---------- */
+      section.block { margin-top: 34px; }
+      section.block h2 { font-size: 23px; border-bottom: 2px solid var(--gold); padding-bottom: 7px; }
+      .how-grid { display: grid; gap: 12px; grid-template-columns: 1fr; margin-top: 14px; }
+      @media (min-width: 760px) { .how-grid { grid-template-columns: 1fr 1fr; } }
+      .how-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); padding: 15px 17px; box-shadow: var(--shadow); }
+      .how-card h3 { font-size: 17px; margin-bottom: 5px; }
+      .how-card p { margin: 0; color: var(--ink-soft); }
+      .how-card p b, .how-card p strong { color: var(--ink); }
+      .formula { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-input); padding: 10px 12px; margin-top: 12px; overflow-x: auto; white-space: nowrap; color: var(--ink); }
+      .import-box { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card); padding: 16px; margin-top: 14px; box-shadow: var(--shadow); }
+      .import-box p { color: var(--ink-soft); margin: 6px 0 12px; }
+      .import-box p b, .import-box p strong { color: var(--ink); }
+      .import-box code { font-family: ui-monospace, Menlo, monospace; font-size: 13.5px; background: var(--panel-2); color: var(--ink); padding: 1px 5px; border-radius: 4px; }
+      .import-box textarea {
+        width: 100%; min-height: 110px; border: 1px solid var(--line); border-radius: var(--radius-input);
+        background: var(--panel-2); color: var(--ink); padding: 10px; font-family: ui-monospace, Menlo, monospace; font-size: 13px;
+      }
+      .btn-row { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 11px; }
+      .btn {
+        border: 1px solid var(--gold); background: var(--btn-bg); color: var(--btn-ink); border-radius: var(--radius-btn);
+        padding: 9px 15px; font-weight: 700;
+      }
+      .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+      .import-status { margin-top: 10px; font-weight: 600; }
+      .import-status.err { color: var(--bad); }
+      footer { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 14px; color: var(--ink-soft); font-size: 13.5px; }
+      footer a { color: var(--gold-strong); }
+      .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      .draft-grid-toggle { display: none; }
+
+      /* ---------- mobile pass (phones first: 360–430px) ---------- */
+      @media (max-width: 767px) {
+        html, body { overflow-x: clip; }
+        body { -webkit-tap-highlight-color: transparent; }
+        .wrap { padding: 14px 12px 40px; max-width: 100%; }
+        /* 16px on every field prevents Android / iOS auto-zoom on focus */
+        input, select, textarea { font-size: 16px !important; }
+        button { touch-action: manipulation; }
+        .lede { font-size: 16px; margin: 8px 0 12px; }
+        .badges { gap: 6px; }
+        .badge { padding: 6px 9px; font-size: 12.5px; }
+
+        /* --- tap targets: everything tappable is at least 44px --- */
+        .role-btn, .toggle, .btn, .draft-toggle-btn,
+        .draft-target-btn, .ugg-link, .filter-reset { min-height: 48px; }
+        .roles { gap: 7px; margin: 16px 0 12px; }
+        .role-btn {
+          flex: 1 1 30%; display: inline-flex; align-items: center; justify-content: center;
+          padding: 10px 6px; text-align: center;
+        }
+        .toggle { padding: 10px 14px; justify-content: center; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; }
+        .btn-row .btn { flex: 1 1 150px; }
+        .filter-reset { padding: 9px 14px; display: inline-flex; align-items: center; }
+        .filter-toggle { min-width: 68px; min-height: 44px; }
+        .pool-btn { width: 44px; height: 44px; font-size: 18px; flex: none; }
+        .close-btn { width: 44px; height: 44px; font-size: 17px; }
+        .pool-chip { padding: 2px 2px 2px 4px; }
+        .pool-chip button {
+          min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .draft-result { min-height: 48px; padding: 9px 10px; }
+        .answer { min-height: 56px; padding: 10px 8px; }
+
+        /* --- controls stack and wrap, fields full-width and tall --- */
+        .controls { padding: 12px; gap: 12px; }
+        .field input, .field select, .draft-role-row .field select,
+        .filter-field select, .draft-picker input, .draft-grid-search input {
+          min-height: 48px; padding: 11px 12px;
+        }
+        #poolToggle { width: 100%; }
+        .filter-panel { margin-top: 10px; padding: 12px; }
+        .filter-head { flex-wrap: wrap; }
+        .filter-option { padding: 11px; }
+
+        /* --- ranking rows: stacked cards, stats in a 2-up grid --- */
+        .row {
+          grid-template-columns: 30px minmax(0, 1fr) auto;
+          gap: 8px; padding: 12px 10px; margin-top: 8px;
+        }
+        .rank { font-size: 16px; }
+        .champ { gap: 9px; }
+        .champ img { width: 42px; height: 42px; }
+        .champ .nm { font-size: 16px; }
+        .champ .arch { font-size: 11.5px; }
+        .score-num { font-size: 21px; }
+        .score-bar { min-width: 60px; }
+        .row .mobile-stats {
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 9px 14px; width: 100%;
+        }
+        .stat .v { font-size: 16px; }
+        .counter-cell { gap: 7px; }
+        .counter-cell .cn { overflow-wrap: anywhere; }
+
+        /* --- detail view: capped splash, tighter padding --- */
+        .detail-hero .art { height: 160px; min-height: 160px; }
+        .detail-main { padding: 14px; }
+        .detail-main h2 { font-size: 24px; }
+        .verdict { font-size: 16px; }
+        .big-stats { gap: 8px; margin-top: 13px; }
+        .big-stat { padding: 10px 11px; }
+        .big-stat .v { font-size: 22px; }
+        .chart-box { padding: 4px 12px 8px; }
+        .match-cols { padding: 8px 12px 16px; gap: 12px; }
+        .mrow { grid-template-columns: 32px minmax(0, 1fr) auto auto; gap: 7px; }
+        .mrow img { width: 32px; height: 32px; }
+        .clear-banner { padding: 12px; gap: 10px; margin-top: 12px; }
+        .clear-banner .cb-v { font-size: 26px; }
+        .ugg-link { max-width: 100%; padding: 11px 15px; }
+
+        /* --- sections --- */
+        section.block { margin-top: 26px; }
+        .how-card { padding: 13px 14px; min-width: 0; }
+        .formula { max-width: 100%; }
+        .import-box { padding: 13px; }
+        .enemy-panel { padding: 13px; margin-top: 12px; }
+        .answer { grid-template-columns: 24px 38px minmax(0, 1fr) auto; gap: 8px; }
+        .answer img { width: 38px; height: 38px; }
+        .clear-note { padding: 11px 12px; font-size: 13.5px; }
+        footer { margin-top: 30px; }
+
+        /* --- Live Draft on a phone --- */
+        .draft-panel { margin-top: 14px; padding: 12px; }
+        .draft-head h2 { font-size: 21px; }
+        .draft-toggle-btn { width: 100%; padding: 11px 16px; }
+        .draft-body:not([hidden]) { display: flex; flex-direction: column; }
+        .draft-role-row { order: 1; }
+        .draft-groups { order: 2; }
+        .draft-recs-head { order: 3; }
+        #draftRecs { order: 4; }
+        .draft-board { order: 5; }
+        .draft-import { order: 6; }
+        .draft-role-row { gap: 8px; }
+        .draft-role-row .field { flex: 1 1 100%; min-width: 0; }
+        .draft-status { flex: 1 1 auto; }
+        #draftClear { flex: none; }
+        .draft-groups { gap: 10px; margin-top: 12px; min-width: 0; }
+        .draft-group { padding: 10px; }
+        /* team trays scroll sideways inside their own strip, never the page */
+        .draft-chips {
+          flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+          padding-bottom: 6px; -webkit-overflow-scrolling: touch; max-width: 100%;
+        }
+        .draft-slot { width: 72px; flex: 0 0 72px; min-height: 44px; }
+        .draft-slot img { height: 58px; }
+        .draft-slot .slot-empty-icon { height: 58px; }
+        .draft-slot .slot-name {
+          white-space: normal; overflow: hidden; text-overflow: clip;
+          min-height: 27px; display: flex; align-items: center; justify-content: center;
+        }
+        .draft-board { padding: 10px; margin-top: 12px; }
+        /* the Add to switch stays pinned while the page / grid scrolls */
+        .draft-target-row {
+          position: sticky; top: 8px; z-index: 25; background: var(--panel-2);
+          margin: -4px -4px 0; padding: 6px 4px 8px; border-bottom: 1px solid var(--line);
+        }
+        .draft-targets { flex: 1 1 100%; }
+        .draft-target-btn { flex: 1 1 30%; padding: 10px 6px; text-align: center; }
+        .draft-grid-hint { flex: 1 1 100%; }
+        .draft-grid-toggle {
+          display: inline-flex; align-items: center; justify-content: center; flex: 1 1 100%;
+          min-height: 44px; padding: 9px 13px; border: 1px solid var(--line);
+          background: var(--panel); color: var(--ink); border-radius: var(--radius-btn);
+          font-weight: 700; font-size: 14px;
+        }
+        .draft-board.grid-collapsed .draft-grid,
+        .draft-board.grid-collapsed .draft-grid-search { display: none; }
+        /* tiles never drop below a comfortably tappable size */
+        .draft-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 7px; max-height: 320px; }
+        .draft-tile { min-height: 44px; }
+        .draft-tile .tile-name {
+          white-space: normal; overflow: visible; text-overflow: clip;
+          min-height: 30px; display: flex; align-items: center; justify-content: center;
+        }
+        .draft-import { padding: 10px; }
+        .draft-recs-head { margin-top: 14px; }
+        .draft-card { padding: 12px; }
+        .draft-card-top { gap: 9px; }
+        .draft-card-top img { width: 46px; height: 46px; }
+        .draft-card .dn { font-size: 16.5px; }
+        .draft-card .dscore .v { font-size: 25px; }
+        /* breakdown bars go full-width so they stay legible */
+        .bd-row {
+          grid-template-columns: minmax(0, 1fr) auto;
+          grid-template-areas: "bk bv" "bar bar"; gap: 5px 8px; margin-top: 10px;
+        }
+        .bd-row .bk { grid-area: bk; }
+        .bd-row .bv { grid-area: bv; white-space: normal; text-align: right; font-size: 13px; }
+        .bd-bar { grid-area: bar; height: 7px; }
+      }
+      @media (max-width: 380px) {
+        .score-bar { min-width: 52px; }
+        .champ .arch { font-size: 11px; }
+        .draft-slot { width: 68px; flex-basis: 68px; }
+      }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="intro">
+        <h1>Control <span class="gold">Ward</span></h1>
+        <p class="lede">
+          Blindability rankings + live draft companion. Before you lock in, this ranks every champion in the role by how safely they can be
+          picked blind — not their raw win rate, but the whole shape of their matchups:
+          the win rate you'd expect against the enemy pool people actually play, how wildly
+          those matchups swing, and how likely you are to get counterpicked.
+        </p>
+        <div class="badges">
+          <span class="badge">Patch 16.21.1 · roster via Riot Data Dragon</span>
+          <span class="badge model">Modeled matchup data — illustrative, not live stats</span>
+          <span class="badge">173 champions · 5 roles</span>
+        </div>
+      </div>
+
+      <div class="draft-panel" id="draftPanel">
+        <div class="draft-head">
+          <div>
+            <h2>Live Draft</h2>
+            <p class="sub">In champ select? Add picks as they happen — ally picks, enemy picks, bans — and the
+            recommendations below update instantly: who counters what they've locked, who fits what your team
+            has, and who stays safe if your lane opponent hasn't shown yet.</p>
+          </div>
+          <button type="button" class="draft-toggle-btn" id="draftToggle" aria-pressed="false">Start Live Draft</button>
+        </div>
+        <p class="draft-honesty">Counter and synergy numbers come from <b>this tool's illustrative model</b> (or your
+        CSV-imported numbers below) — not live Riot data. Synergy is model-based, derived from archetypes and damage
+        profiles. <b>Read-only:</b> this mode only recommends — it never picks, hovers, or locks anything in your game client.</p>
+        <div class="draft-body" id="draftBody" hidden>
+          <div class="draft-role-row">
+            <div class="field">
+              <label for="draftRole">My role</label>
+              <select id="draftRole">
+                <option value="top">Top</option>
+                <option value="jungle" selected>Jungle</option>
+                <option value="mid">Mid</option>
+                <option value="adc">Bottom</option>
+                <option value="support">Support</option>
+              </select>
+            </div>
+            <span class="draft-status" id="draftStatus" aria-live="polite"></span>
+            <button type="button" class="btn ghost" id="draftClear">Clear draft</button>
+          </div>
+          <div class="draft-groups">
+            <div class="draft-group ally-g">
+              <div class="draft-group-label"><span>Your team</span><span class="cnt" id="draftAllyCount">0 / 5</span></div>
+              <div class="draft-chips" id="draftAllyChips"></div>
+              <div class="draft-picker">
+                <input id="draftAllyInput" type="search" placeholder="Search an ally champion…" autocomplete="off" aria-label="Search ally champion" />
+                <div class="draft-results" id="draftAllyResults" hidden></div>
+              </div>
+            </div>
+            <div class="draft-group enemy-g">
+              <div class="draft-group-label"><span>Enemy team</span><span class="cnt" id="draftEnemyCount">0 / 5</span></div>
+              <div class="draft-chips" id="draftEnemyChips"></div>
+              <div class="draft-picker">
+                <input id="draftEnemyInput" type="search" placeholder="Search an enemy champion…" autocomplete="off" aria-label="Search enemy champion" />
+                <div class="draft-results" id="draftEnemyResults" hidden></div>
+              </div>
+            </div>
+            <div class="draft-group ban-g">
+              <div class="draft-group-label"><span>Bans</span><span class="cnt" id="draftBanCount">0</span></div>
+              <div class="draft-chips" id="draftBanChips"></div>
+              <div class="draft-picker">
+                <input id="draftBanInput" type="search" placeholder="Search a banned champion…" autocomplete="off" aria-label="Search banned champion" />
+                <div class="draft-results" id="draftBanResults" hidden></div>
+              </div>
+            </div>
+          </div>
+          <div class="draft-board" id="draftBoard">
+            <div class="draft-target-row">
+              <span class="draft-target-label" id="draftTargetLabel">Add to</span>
+              <div class="draft-targets" role="group" aria-labelledby="draftTargetLabel">
+                <button type="button" class="draft-target-btn" data-draft-target="ally" aria-pressed="true">Ally pick</button>
+                <button type="button" class="draft-target-btn" data-draft-target="enemy" aria-pressed="false">Enemy pick</button>
+                <button type="button" class="draft-target-btn" data-draft-target="bans" aria-pressed="false">Ban</button>
+              </div>
+              <span class="draft-grid-hint" id="draftGridHint" aria-live="polite"></span>
+              <button type="button" class="draft-grid-toggle" id="draftGridToggle" aria-expanded="true" aria-controls="draftGrid">Hide champion grid</button>
+            </div>
+            <div class="draft-grid-search">
+              <label class="sr-only" for="draftGridSearch">Filter champions in the grid</label>
+              <input id="draftGridSearch" type="search" placeholder="Filter champions…" autocomplete="off" />
+            </div>
+            <div class="draft-grid" id="draftGrid" aria-label="Champion grid — tap a champion to add it to the selected list"></div>
+          </div>
+          <div class="draft-import">
+            <label for="draftPaste">Import a draft (bridge link parameters or JSON)</label>
+            <textarea id="draftPaste" placeholder="live=1&amp;role=jungle&amp;ally=Orianna,Jinx&amp;enemy=Kayn&amp;bans=Master Yi,Zed  —  or  {&quot;role&quot;:&quot;jungle&quot;,&quot;ally&quot;:[&quot;Orianna&quot;],&quot;enemy&quot;:[&quot;Kayn&quot;],&quot;bans&quot;:[]}"></textarea>
+            <div class="btn-row">
+              <button type="button" class="btn" id="draftLoad">Load draft</button>
+            </div>
+            <div class="draft-import-status" id="draftPasteStatus" aria-live="polite"></div>
+          </div>
+          <div class="draft-recs-head">
+            <h3>Top Draft Options</h3>
+            <span class="wts" id="draftWeights"></span>
+          </div>
+          <div id="draftRecs" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="roles" id="roles" role="group" aria-label="Role"></div>
+
+      <div class="controls">
+        <div class="field">
+          <label for="search">Search champions</label>
+          <input id="search" type="search" placeholder="Try “Rammus” or “assassin”…" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="enemy">They already locked…</label>
+          <select id="enemy"><option value="">— nobody yet (blind pick) —</option></select>
+        </div>
+        <div class="field">
+          <label for="sort">Sort ranking by</label>
+          <select id="sort">
+            <option value="score">Blindability score</option>
+            <option value="exp">Expected win rate</option>
+            <option value="spreadAsc">Narrowest spread (most consistent)</option>
+            <option value="spreadDesc">Widest spread (most volatile)</option>
+            <option value="pick">Pick rate</option>
+            <option value="clear" id="sortClear" hidden>Fastest 1st clear (Jungle)</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </div>
+        <button class="toggle" id="poolToggle" aria-pressed="false" type="button">★ My pool only</button>
+      </div>
+
+      <div class="filter-panel" id="filterPanel" aria-labelledby="filterTitle">
+        <div class="filter-head">
+          <span class="filter-title" id="filterTitle">Filters</span>
+          <button type="button" class="filter-reset" id="filterReset" disabled>Clear filters</button>
+        </div>
+        <div class="filter-grid">
+          <div class="filter-option" id="clearFilterOption">
+            <div class="filter-option-top">
+              <span class="filter-option-label" id="clearFilterLabel">Clear time</span>
+              <button type="button" class="toggle filter-toggle" id="clearFilterToggle" aria-pressed="false" aria-labelledby="clearFilterLabel clearFilterToggle">Off</button>
+            </div>
+            <div class="filter-field">
+              <label for="clearMax">Maximum clear time</label>
+              <select id="clearMax" disabled>
+                <option value="175">2:55 or faster</option>
+                <option value="180">3:00 or faster</option>
+                <option value="183">3:03 or faster</option>
+                <option value="185" selected>3:05 or faster</option>
+                <option value="190">3:10 or faster</option>
+                <option value="195">3:15 or faster</option>
+                <option value="200">3:20 or faster</option>
+                <option value="210">3:30 or faster</option>
+              </select>
+              <p class="filter-hint">Jungle only — champions with no measured time are hidden while this is on.</p>
+            </div>
+          </div>
+          <div class="filter-option" id="winFilterOption">
+            <div class="filter-option-top">
+              <span class="filter-option-label" id="winFilterLabel">Win percentage</span>
+              <button type="button" class="toggle filter-toggle" id="winFilterToggle" aria-pressed="false" aria-labelledby="winFilterLabel winFilterToggle">Off</button>
+            </div>
+            <div class="filter-field">
+              <label for="winMin">Minimum win percentage</label>
+              <select id="winMin" disabled>
+                <option value="48">48.0% or higher</option>
+                <option value="49">49.0% or higher</option>
+                <option value="50">50.0% or higher</option>
+                <option value="50.5">50.5% or higher</option>
+                <option value="51" selected>51.0% or higher</option>
+                <option value="51.5">51.5% or higher</option>
+                <option value="52">52.0% or higher</option>
+              </select>
+              <p class="filter-hint">Based on expected win rate when blind picked, in the current role.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="poolbar" id="poolbar"></div>
+
+      <div class="enemy-panel" id="enemyPanel" aria-live="polite"></div>
+
+      <div class="draft-list-note" id="draftListNote" hidden></div>
+      <div class="list-head" aria-hidden="true">
+        <span style="text-align:center">#</span><span>Champion</span><span>Blindability</span>
+        <span>Exp. WR</span><span>Spread</span><span id="headClear" style="display:none">1st clear</span><span>Counter risk</span><span>Worst counter</span><span></span>
+      </div>
+      <div id="list"></div>
+      <div class="clear-note" id="clearNote" hidden></div>
+
+      <section class="block">
+        <h2>How blindability works</h2>
+        <div class="how-grid">
+          <div class="how-card">
+            <h3>Expected win rate</h3>
+            <p>Your average matchup win rate, <b>weighted by how often each enemy is actually picked</b>.
+            A 60% matchup into a champion nobody plays barely moves it; a 46% matchup into the most
+            popular pick in the role drags it down every single queue.</p>
+          </div>
+          <div class="how-card">
+            <h3>Spread</h3>
+            <p>The weighted standard deviation of those matchup win rates — the width of the bell curve.
+            A <b>narrow spread</b> means the game plays out roughly the same no matter who shows up.
+            A <b>wide spread</b> means some lobbies are free and some are doomed before lane starts.</p>
+          </div>
+          <div class="how-card">
+            <h3>Counter risk</h3>
+            <p>The share of enemy picks — again weighted by pick rate — where your win rate drops
+            <b>below 47%</b>. This is the “how likely is a counterpick, actually?” number: a nightmare
+            matchup that appears in 1% of games is a footnote, not a risk.</p>
+          </div>
+          <div class="how-card">
+            <h3>The score</h3>
+            <p>Expected win rate, <b>penalized for spread and counter risk</b>. That's why a flat 51%
+            champion outranks a coin-flip 51% champion here — blind picking is about the floor,
+            not the ceiling.</p>
+            <div class="formula">score = 50 + (expWR − 50) × 7 − max(0, spread − 3.5) × 5 − counterRisk × 0.40</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>Use your own matchup numbers</h2>
+        <div class="import-box">
+          <p>
+            The built-in dataset is a <b>model</b>: every champion's matchup curve is generated from
+            their archetype, a per-champion strength and volatility rating, and curated hard counters —
+            shaped to behave like the real thing, but not scraped live stats. If you track real numbers
+            (from Lolalytics, U.GG, OP.GG or your own games), paste them as CSV for the
+            <b>currently selected role</b> and everything recomputes instantly, for this session:
+          </p>
+          <p><code>champion,enemy,winrate</code> — one row per matchup, e.g. <code>Rammus,Master Yi,61.2</code>.
+          Names can be champion IDs (<code>MasterYi</code>) or display names (<code>Master Yi</code>).
+          Rows you import replace the modeled matchup in both directions; matchups you don't list keep the model values.</p>
+          <textarea id="csvText" placeholder="champion,enemy,winrate&#10;Rammus,Master Yi,61.2&#10;Rammus,Karthus,43.8" aria-label="Matchup CSV"></textarea>
+          <div class="btn-row">
+            <button class="btn" id="csvApply" type="button">Apply to this role</button>
+            <button class="btn ghost" id="csvTemplate" type="button">Download model CSV for this role</button>
+            <button class="btn ghost" id="csvReset" type="button">Reset role to model data</button>
+          </div>
+          <div class="import-status" id="csvStatus" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <footer>
+        <p>
+          Framework based on “The math behind champion blindability” by MachineLoLing.
+          Champion roster, names and portraits: Riot Games Data Dragon, patch 16.21.1.
+          Matchup figures are a clearly-labeled illustrative model — import your own CSV above for real numbers.
+          Unofficial fan tool, not affiliated with or endorsed by Riot Games.
+        </p>
+      </footer>
+    </main>
+
+    <script>
+      "use strict";
+      const DATA = {"patch": "16.21.1", "champs": {"Aatrox": {"name": "Aatrox", "arch": "DU", "vol": 1.15, "roles": ["top"]}, "Ahri": {"name": "Ahri", "arch": "BM", "vol": 0.5, "roles": ["mid"]}, "Akali": {"name": "Akali", "arch": "AS", "vol": 1.4, "roles": ["mid", "top"]}, "Akshan": {"name": "Akshan", "arch": "MM", "vol": 1.05, "roles": ["mid", "top"]}, "Alistar": {"name": "Alistar", "arch": "WD", "vol": 0.7, "roles": ["support"]}, "Ambessa": {"name": "Ambessa", "arch": "DV", "vol": 1.05, "roles": ["top", "jungle"]}, "Amumu": {"name": "Amumu", "arch": "TK", "vol": 0.7, "roles": ["jungle", "support"]}, "Anivia": {"name": "Anivia", "arch": "CM", "vol": 0.8, "roles": ["mid"]}, "Annie": {"name": "Annie", "arch": "BM", "vol": 1.05, "roles": ["mid", "support"]}, "Aphelios": {"name": "Aphelios", "arch": "MM", "vol": 1.1, "roles": ["adc"]}, "Ashe": {"name": "Ashe", "arch": "MM", "vol": 1.0, "roles": ["adc", "support"]}, "AurelionSol": {"name": "Aurelion Sol", "arch": "CM", "vol": 1.1, "roles": ["mid"]}, "Aurora": {"name": "Aurora", "arch": "BM", "vol": 1.05, "roles": ["mid", "top"]}, "Azir": {"name": "Azir", "arch": "CM", "vol": 0.65, "roles": ["mid"]}, "Bard": {"name": "Bard", "arch": "EN", "vol": 1.15, "roles": ["support"]}, "Belveth": {"name": "Bel'Veth", "arch": "DU", "vol": 1.25, "roles": ["jungle"]}, "Blitzcrank": {"name": "Blitzcrank", "arch": "CT", "vol": 1.15, "roles": ["support"]}, "Brand": {"name": "Brand", "arch": "BM", "vol": 1.05, "roles": ["support", "jungle", "mid"]}, "Braum": {"name": "Braum", "arch": "WD", "vol": 0.7, "roles": ["support"]}, "Briar": {"name": "Briar", "arch": "DV", "vol": 1.15, "roles": ["jungle"]}, "Caitlyn": {"name": "Caitlyn", "arch": "MM", "vol": 1.0, "roles": ["adc"]}, "Camille": {"name": "Camille", "arch": "DV", "vol": 1.15, "roles": ["top"]}, "Cassiopeia": {"name": "Cassiopeia", "arch": "CM", "vol": 1.0, "roles": ["mid"]}, "Chogath": {"name": "Cho'Gath", "arch": "TK", "vol": 0.7, "roles": ["top"]}, "Corki": {"name": "Corki", "arch": "MM", "vol": 1.0, "roles": ["mid", "adc"]}, "Darius": {"name": "Darius", "arch": "JG", "vol": 1.0, "roles": ["top"]}, "Diana": {"name": "Diana", "arch": "DV", "vol": 1.05, "roles": ["jungle", "mid"]}, "DrMundo": {"name": "Dr. Mundo", "arch": "JG", "vol": 0.85, "roles": ["top", "jungle"]}, "Draven": {"name": "Draven", "arch": "MM", "vol": 1.35, "roles": ["adc"]}, "Ekko": {"name": "Ekko", "arch": "AS", "vol": 1.25, "roles": ["jungle", "mid"]}, "Elise": {"name": "Elise", "arch": "AS", "vol": 1.2, "roles": ["jungle"]}, "Evelynn": {"name": "Evelynn", "arch": "AS", "vol": 1.4, "roles": ["jungle"]}, "Ezreal": {"name": "Ezreal", "arch": "MM", "vol": 1.05, "roles": ["adc"]}, "Fiddlesticks": {"name": "Fiddlesticks", "arch": "BM", "vol": 1.1, "roles": ["jungle", "support"]}, "Fiora": {"name": "Fiora", "arch": "DU", "vol": 1.25, "roles": ["top"]}, "Fizz": {"name": "Fizz", "arch": "AS", "vol": 1.35, "roles": ["mid"]}, "Galio": {"name": "Galio", "arch": "TK", "vol": 0.7, "roles": ["mid", "support"]}, "Gangplank": {"name": "Gangplank", "arch": "DU", "vol": 1.2, "roles": ["top"]}, "Garen": {"name": "Garen", "arch": "JG", "vol": 0.85, "roles": ["top"]}, "Gnar": {"name": "Gnar", "arch": "TK", "vol": 1.05, "roles": ["top"]}, "Gragas": {"name": "Gragas", "arch": "DV", "vol": 1.05, "roles": ["jungle", "top"]}, "Graves": {"name": "Graves", "arch": "MM", "vol": 1.05, "roles": ["jungle"]}, "Gwen": {"name": "Gwen", "arch": "DU", "vol": 1.15, "roles": ["top", "jungle"]}, "Hecarim": {"name": "Hecarim", "arch": "DV", "vol": 1.05, "roles": ["jungle"]}, "Heimerdinger": {"name": "Heimerdinger", "arch": "PK", "vol": 1.0, "roles": ["mid", "top", "support"]}, "Hwei": {"name": "Hwei", "arch": "PK", "vol": 1.0, "roles": ["mid", "support"]}, "Illaoi": {"name": "Illaoi", "arch": "JG", "vol": 0.85, "roles": ["top"]}, "Irelia": {"name": "Irelia", "arch": "DU", "vol": 1.3, "roles": ["top", "mid"]}, "Ivern": {"name": "Ivern", "arch": "EN", "vol": 0.7, "roles": ["jungle"]}, "Janna": {"name": "Janna", "arch": "EN", "vol": 0.5, "roles": ["support"]}, "JarvanIV": {"name": "Jarvan IV", "arch": "DV", "vol": 1.05, "roles": ["jungle"]}, "Jax": {"name": "Jax", "arch": "DU", "vol": 1.2, "roles": ["top", "jungle"]}, "Jayce": {"name": "Jayce", "arch": "PK", "vol": 1.1, "roles": ["top", "mid"]}, "Jhin": {"name": "Jhin", "arch": "MM", "vol": 1.0, "roles": ["adc"]}, "Jinx": {"name": "Jinx", "arch": "MM", "vol": 1.05, "roles": ["adc"]}, "KSante": {"name": "K'Sante", "arch": "TK", "vol": 1.05, "roles": ["top"]}, "Kaisa": {"name": "Kai'Sa", "arch": "MM", "vol": 1.1, "roles": ["adc"]}, "Kalista": {"name": "Kalista", "arch": "MM", "vol": 1.2, "roles": ["adc"]}, "Karma": {"name": "Karma", "arch": "EN", "vol": 0.65, "roles": ["support", "mid"]}, "Karthus": {"name": "Karthus", "arch": "CM", "vol": 1.05, "roles": ["jungle", "mid"]}, "Kassadin": {"name": "Kassadin", "arch": "AS", "vol": 1.3, "roles": ["mid"]}, "Katarina": {"name": "Katarina", "arch": "AS", "vol": 1.55, "roles": ["mid"]}, "Kayle": {"name": "Kayle", "arch": "MM", "vol": 1.25, "roles": ["top", "mid"]}, "Kayn": {"name": "Kayn", "arch": "AS", "vol": 1.25, "roles": ["jungle"]}, "Kennen": {"name": "Kennen", "arch": "PK", "vol": 1.0, "roles": ["top"]}, "Khazix": {"name": "Kha'Zix", "arch": "AS", "vol": 1.4, "roles": ["jungle"]}, "Kindred": {"name": "Kindred", "arch": "MM", "vol": 1.25, "roles": ["jungle"]}, "Kled": {"name": "Kled", "arch": "DV", "vol": 1.15, "roles": ["top"]}, "KogMaw": {"name": "Kog'Maw", "arch": "MM", "vol": 1.0, "roles": ["adc"]}, "Leblanc": {"name": "LeBlanc", "arch": "AS", "vol": 1.4, "roles": ["mid"]}, "LeeSin": {"name": "Lee Sin", "arch": "DV", "vol": 1.2, "roles": ["jungle"]}, "Leona": {"name": "Leona", "arch": "CT", "vol": 0.95, "roles": ["support"]}, "Lillia": {"name": "Lillia", "arch": "CM", "vol": 1.05, "roles": ["jungle"]}, "Lissandra": {"name": "Lissandra", "arch": "CM", "vol": 0.8, "roles": ["mid"]}, "Locke": {"name": "Locke", "arch": "AS", "vol": 1.3, "roles": ["mid"]}, "Lucian": {"name": "Lucian", "arch": "MM", "vol": 1.1, "roles": ["adc"]}, "Lulu": {"name": "Lulu", "arch": "EN", "vol": 0.55, "roles": ["support"]}, "Lux": {"name": "Lux", "arch": "PK", "vol": 1.0, "roles": ["mid", "support"]}, "Malphite": {"name": "Malphite", "arch": "TK", "vol": 0.6, "roles": ["top"]}, "Malzahar": {"name": "Malzahar", "arch": "CM", "vol": 0.75, "roles": ["mid"]}, "Maokai": {"name": "Maokai", "arch": "TK", "vol": 0.7, "roles": ["support", "jungle", "top"]}, "MasterYi": {"name": "Master Yi", "arch": "DU", "vol": 1.5, "roles": ["jungle"]}, "Mel": {"name": "Mel", "arch": "PK", "vol": 1.0, "roles": ["mid", "support"]}, "Milio": {"name": "Milio", "arch": "EN", "vol": 0.5, "roles": ["support"]}, "MissFortune": {"name": "Miss Fortune", "arch": "MM", "vol": 1.0, "roles": ["adc"]}, "Mordekaiser": {"name": "Mordekaiser", "arch": "JG", "vol": 0.85, "roles": ["top"]}, "Morgana": {"name": "Morgana", "arch": "CM", "vol": 0.8, "roles": ["support", "jungle"]}, "Naafiri": {"name": "Naafiri", "arch": "AS", "vol": 1.2, "roles": ["mid", "jungle"]}, "Nami": {"name": "Nami", "arch": "EN", "vol": 0.65, "roles": ["support"]}, "Nasus": {"name": "Nasus", "arch": "JG", "vol": 1.05, "roles": ["top"]}, "Nautilus": {"name": "Nautilus", "arch": "CT", "vol": 0.95, "roles": ["support"]}, "Neeko": {"name": "Neeko", "arch": "CM", "vol": 1.0, "roles": ["mid", "support"]}, "Nidalee": {"name": "Nidalee", "arch": "AS", "vol": 1.3, "roles": ["jungle"]}, "Nilah": {"name": "Nilah", "arch": "DU", "vol": 1.2, "roles": ["adc"]}, "Nocturne": {"name": "Nocturne", "arch": "DV", "vol": 1.1, "roles": ["jungle"]}, "Nunu": {"name": "Nunu & Willump", "arch": "TK", "vol": 0.7, "roles": ["jungle"]}, "Olaf": {"name": "Olaf", "arch": "JG", "vol": 1.05, "roles": ["top", "jungle"]}, "Orianna": {"name": "Orianna", "arch": "CM", "vol": 0.6, "roles": ["mid"]}, "Ornn": {"name": "Ornn", "arch": "TK", "vol": 0.55, "roles": ["top"]}, "Pantheon": {"name": "Pantheon", "arch": "DV", "vol": 1.05, "roles": ["support", "jungle", "top", "mid"]}, "Poppy": {"name": "Poppy", "arch": "WD", "vol": 0.7, "roles": ["top", "jungle", "support"]}, "Pyke": {"name": "Pyke", "arch": "AS", "vol": 1.25, "roles": ["support"]}, "Qiyana": {"name": "Qiyana", "arch": "AS", "vol": 1.4, "roles": ["mid", "jungle"]}, "Quinn": {"name": "Quinn", "arch": "MM", "vol": 1.1, "roles": ["top"]}, "Rakan": {"name": "Rakan", "arch": "CT", "vol": 1.05, "roles": ["support"]}, "Rammus": {"name": "Rammus", "arch": "TK", "vol": 0.75, "roles": ["jungle"]}, "RekSai": {"name": "Rek'Sai", "arch": "DV", "vol": 1.15, "roles": ["jungle"]}, "Rell": {"name": "Rell", "arch": "CT", "vol": 0.95, "roles": ["support"]}, "Renata": {"name": "Renata Glasc", "arch": "EN", "vol": 0.65, "roles": ["support"]}, "Renekton": {"name": "Renekton", "arch": "DV", "vol": 1.05, "roles": ["top"]}, "Rengar": {"name": "Rengar", "arch": "AS", "vol": 1.45, "roles": ["jungle", "top"]}, "Riven": {"name": "Riven", "arch": "DU", "vol": 1.3, "roles": ["top"]}, "Rumble": {"name": "Rumble", "arch": "BM", "vol": 1.05, "roles": ["top"]}, "Ryze": {"name": "Ryze", "arch": "CM", "vol": 0.9, "roles": ["mid", "top"]}, "Samira": {"name": "Samira", "arch": "DV", "vol": 1.35, "roles": ["adc"]}, "Sejuani": {"name": "Sejuani", "arch": "TK", "vol": 0.6, "roles": ["jungle"]}, "Senna": {"name": "Senna", "arch": "MM", "vol": 0.95, "roles": ["support", "adc"]}, "Seraphine": {"name": "Seraphine", "arch": "EN", "vol": 0.65, "roles": ["support", "mid"]}, "Sett": {"name": "Sett", "arch": "JG", "vol": 0.85, "roles": ["top"]}, "Shaco": {"name": "Shaco", "arch": "AS", "vol": 1.45, "roles": ["jungle", "support"]}, "Shen": {"name": "Shen", "arch": "WD", "vol": 0.7, "roles": ["top", "support"]}, "Shyvana": {"name": "Shyvana", "arch": "JG", "vol": 1.0, "roles": ["jungle"]}, "Singed": {"name": "Singed", "arch": "TK", "vol": 1.15, "roles": ["top"]}, "Sion": {"name": "Sion", "arch": "TK", "vol": 0.7, "roles": ["top"]}, "Sivir": {"name": "Sivir", "arch": "MM", "vol": 1.0, "roles": ["adc"]}, "Skarner": {"name": "Skarner", "arch": "TK", "vol": 0.8, "roles": ["jungle"]}, "Smolder": {"name": "Smolder", "arch": "MM", "vol": 1.1, "roles": ["adc", "mid"]}, "Sona": {"name": "Sona", "arch": "EN", "vol": 0.55, "roles": ["support"]}, "Soraka": {"name": "Soraka", "arch": "EN", "vol": 0.5, "roles": ["support"]}, "Swain": {"name": "Swain", "arch": "CM", "vol": 0.8, "roles": ["mid", "support"]}, "Sylas": {"name": "Sylas", "arch": "DU", "vol": 1.25, "roles": ["mid", "jungle"]}, "Syndra": {"name": "Syndra", "arch": "CM", "vol": 0.7, "roles": ["mid"]}, "TahmKench": {"name": "Tahm Kench", "arch": "WD", "vol": 0.7, "roles": ["support", "top"]}, "Taliyah": {"name": "Taliyah", "arch": "CM", "vol": 0.8, "roles": ["mid", "jungle"]}, "Talon": {"name": "Talon", "arch": "AS", "vol": 1.35, "roles": ["mid", "jungle"]}, "Taric": {"name": "Taric", "arch": "WD", "vol": 0.7, "roles": ["support"]}, "Teemo": {"name": "Teemo", "arch": "PK", "vol": 1.1, "roles": ["top", "jungle", "support"]}, "Thresh": {"name": "Thresh", "arch": "CT", "vol": 1.05, "roles": ["support"]}, "Tristana": {"name": "Tristana", "arch": "MM", "vol": 1.15, "roles": ["adc", "mid"]}, "Trundle": {"name": "Trundle", "arch": "DU", "vol": 1.0, "roles": ["top", "jungle"]}, "Tryndamere": {"name": "Tryndamere", "arch": "DU", "vol": 1.3, "roles": ["top"]}, "TwistedFate": {"name": "Twisted Fate", "arch": "CM", "vol": 0.95, "roles": ["mid"]}, "Twitch": {"name": "Twitch", "arch": "MM", "vol": 1.25, "roles": ["adc"]}, "Udyr": {"name": "Udyr", "arch": "JG", "vol": 1.0, "roles": ["jungle", "top"]}, "Urgot": {"name": "Urgot", "arch": "JG", "vol": 0.85, "roles": ["top"]}, "Varus": {"name": "Varus", "arch": "PK", "vol": 1.0, "roles": ["adc"]}, "Vayne": {"name": "Vayne", "arch": "MM", "vol": 1.3, "roles": ["adc", "top"]}, "Veigar": {"name": "Veigar", "arch": "CM", "vol": 1.05, "roles": ["mid"]}, "Velkoz": {"name": "Vel'Koz", "arch": "PK", "vol": 1.0, "roles": ["mid", "support"]}, "Vex": {"name": "Vex", "arch": "BM", "vol": 1.05, "roles": ["mid"]}, "Vi": {"name": "Vi", "arch": "DV", "vol": 1.05, "roles": ["jungle"]}, "Viego": {"name": "Viego", "arch": "DU", "vol": 1.3, "roles": ["jungle"]}, "Viktor": {"name": "Viktor", "arch": "CM", "vol": 0.65, "roles": ["mid"]}, "Vladimir": {"name": "Vladimir", "arch": "CM", "vol": 1.1, "roles": ["mid", "top"]}, "Volibear": {"name": "Volibear", "arch": "JG", "vol": 1.05, "roles": ["top", "jungle"]}, "Warwick": {"name": "Warwick", "arch": "DV", "vol": 1.05, "roles": ["jungle", "top"]}, "MonkeyKing": {"name": "Wukong", "arch": "DV", "vol": 1.1, "roles": ["jungle", "top"]}, "Xayah": {"name": "Xayah", "arch": "MM", "vol": 1.0, "roles": ["adc"]}, "Xerath": {"name": "Xerath", "arch": "PK", "vol": 1.0, "roles": ["mid", "support"]}, "XinZhao": {"name": "Xin Zhao", "arch": "DV", "vol": 1.0, "roles": ["jungle"]}, "Yasuo": {"name": "Yasuo", "arch": "DU", "vol": 1.6, "roles": ["mid", "top"]}, "Yone": {"name": "Yone", "arch": "DU", "vol": 1.35, "roles": ["mid", "top"]}, "Yorick": {"name": "Yorick", "arch": "JG", "vol": 1.05, "roles": ["top"]}, "Yunara": {"name": "Yunara", "arch": "MM", "vol": 1.05, "roles": ["adc"]}, "Yuumi": {"name": "Yuumi", "arch": "EN", "vol": 0.35, "roles": ["support"]}, "Zaahen": {"name": "Zaahen", "arch": "DU", "vol": 1.1, "roles": ["top", "jungle"]}, "Zac": {"name": "Zac", "arch": "TK", "vol": 0.8, "roles": ["jungle", "top"]}, "Zed": {"name": "Zed", "arch": "AS", "vol": 1.5, "roles": ["mid"]}, "Zeri": {"name": "Zeri", "arch": "MM", "vol": 1.2, "roles": ["adc"]}, "Ziggs": {"name": "Ziggs", "arch": "PK", "vol": 1.0, "roles": ["adc", "mid"]}, "Zilean": {"name": "Zilean", "arch": "EN", "vol": 0.8, "roles": ["support", "mid"]}, "Zoe": {"name": "Zoe", "arch": "PK", "vol": 1.2, "roles": ["mid"]}, "Zyra": {"name": "Zyra", "arch": "PK", "vol": 1.0, "roles": ["support", "jungle"]}}, "pools": {"top": {"Aatrox": {"power": 50.9, "pick": 1.87}, "Akali": {"power": 48.9, "pick": 2.47}, "Akshan": {"power": 51.0, "pick": 2.6}, "Ambessa": {"power": 51.9, "pick": 1.53}, "Aurora": {"power": 49.3, "pick": 2.27}, "Camille": {"power": 51.3, "pick": 1.73}, "Chogath": {"power": 50.5, "pick": 0.47}, "Darius": {"power": 51.3, "pick": 5.33}, "DrMundo": {"power": 51.8, "pick": 1.0}, "Fiora": {"power": 49.7, "pick": 0.8}, "Gangplank": {"power": 49.5, "pick": 0.6}, "Garen": {"power": 51.2, "pick": 4.0}, "Gnar": {"power": 50.7, "pick": 0.8}, "Gragas": {"power": 49.9, "pick": 2.67}, "Gwen": {"power": 50.2, "pick": 3.0}, "Heimerdinger": {"power": 50.9, "pick": 0.6}, "Illaoi": {"power": 49.4, "pick": 2.2}, "Irelia": {"power": 49.5, "pick": 0.8}, "Jax": {"power": 49.8, "pick": 4.67}, "Jayce": {"power": 52.0, "pick": 2.07}, "KSante": {"power": 49.6, "pick": 0.53}, "Kayle": {"power": 52.0, "pick": 1.27}, "Kennen": {"power": 50.2, "pick": 0.6}, "Kled": {"power": 51.4, "pick": 1.13}, "Malphite": {"power": 51.0, "pick": 4.0}, "Maokai": {"power": 50.2, "pick": 1.4}, "Mordekaiser": {"power": 49.8, "pick": 0.47}, "Nasus": {"power": 49.0, "pick": 0.67}, "Olaf": {"power": 52.0, "pick": 0.8}, "Ornn": {"power": 50.9, "pick": 1.47}, "Pantheon": {"power": 50.7, "pick": 0.93}, "Poppy": {"power": 51.8, "pick": 2.87}, "Quinn": {"power": 50.2, "pick": 0.93}, "Renekton": {"power": 49.4, "pick": 3.2}, "Rengar": {"power": 51.2, "pick": 1.8}, "Riven": {"power": 51.0, "pick": 4.0}, "Rumble": {"power": 48.6, "pick": 1.2}, "Ryze": {"power": 51.6, "pick": 0.6}, "Sett": {"power": 50.2, "pick": 4.0}, "Shen": {"power": 51.4, "pick": 1.27}, "Singed": {"power": 49.4, "pick": 2.2}, "Sion": {"power": 49.5, "pick": 3.07}, "TahmKench": {"power": 50.5, "pick": 0.93}, "Teemo": {"power": 48.6, "pick": 2.53}, "Trundle": {"power": 51.3, "pick": 0.93}, "Tryndamere": {"power": 51.8, "pick": 0.53}, "Udyr": {"power": 48.6, "pick": 1.0}, "Urgot": {"power": 49.0, "pick": 2.07}, "Vayne": {"power": 50.7, "pick": 1.33}, "Vladimir": {"power": 49.5, "pick": 0.47}, "Volibear": {"power": 49.8, "pick": 1.8}, "Warwick": {"power": 52.2, "pick": 0.87}, "MonkeyKing": {"power": 51.5, "pick": 0.6}, "Yasuo": {"power": 52.1, "pick": 2.93}, "Yone": {"power": 50.0, "pick": 1.2}, "Yorick": {"power": 50.4, "pick": 1.4}, "Zaahen": {"power": 51.0, "pick": 0.67}, "Zac": {"power": 50.6, "pick": 0.87}}, "mid": {"Ahri": {"power": 51.8, "pick": 4.97}, "Akali": {"power": 48.7, "pick": 2.32}, "Akshan": {"power": 49.2, "pick": 0.46}, "Anivia": {"power": 50.3, "pick": 2.52}, "Annie": {"power": 50.1, "pick": 1.92}, "AurelionSol": {"power": 51.1, "pick": 0.6}, "Aurora": {"power": 49.4, "pick": 0.99}, "Azir": {"power": 49.9, "pick": 1.66}, "Brand": {"power": 49.5, "pick": 1.13}, "Cassiopeia": {"power": 50.3, "pick": 0.53}, "Corki": {"power": 51.1, "pick": 0.6}, "Diana": {"power": 50.3, "pick": 1.79}, "Ekko": {"power": 50.5, "pick": 0.66}, "Fizz": {"power": 50.7, "pick": 0.66}, "Galio": {"power": 48.6, "pick": 1.13}, "Heimerdinger": {"power": 50.6, "pick": 1.26}, "Hwei": {"power": 50.9, "pick": 1.79}, "Irelia": {"power": 49.7, "pick": 1.86}, "Jayce": {"power": 50.1, "pick": 2.92}, "Karma": {"power": 49.1, "pick": 0.99}, "Karthus": {"power": 50.3, "pick": 0.93}, "Kassadin": {"power": 50.2, "pick": 1.39}, "Katarina": {"power": 50.6, "pick": 1.66}, "Kayle": {"power": 49.6, "pick": 0.6}, "Leblanc": {"power": 51.3, "pick": 0.99}, "Lissandra": {"power": 48.9, "pick": 1.79}, "Locke": {"power": 49.9, "pick": 1.39}, "Lux": {"power": 49.2, "pick": 3.98}, "Malzahar": {"power": 51.3, "pick": 2.25}, "Mel": {"power": 51.5, "pick": 1.46}, "Naafiri": {"power": 51.6, "pick": 0.6}, "Neeko": {"power": 49.7, "pick": 0.86}, "Orianna": {"power": 50.9, "pick": 3.98}, "Pantheon": {"power": 50.4, "pick": 3.18}, "Qiyana": {"power": 49.7, "pick": 0.99}, "Ryze": {"power": 49.4, "pick": 1.33}, "Seraphine": {"power": 52.0, "pick": 0.6}, "Smolder": {"power": 50.3, "pick": 1.99}, "Swain": {"power": 50.0, "pick": 0.8}, "Sylas": {"power": 49.6, "pick": 2.32}, "Syndra": {"power": 51.2, "pick": 3.98}, "Taliyah": {"power": 51.6, "pick": 2.92}, "Talon": {"power": 49.5, "pick": 0.8}, "Tristana": {"power": 52.2, "pick": 1.33}, "TwistedFate": {"power": 50.8, "pick": 0.53}, "Veigar": {"power": 51.1, "pick": 0.66}, "Velkoz": {"power": 51.9, "pick": 0.8}, "Vex": {"power": 50.7, "pick": 1.86}, "Viktor": {"power": 51.3, "pick": 2.79}, "Vladimir": {"power": 50.1, "pick": 0.93}, "Xerath": {"power": 49.6, "pick": 0.86}, "Yasuo": {"power": 50.3, "pick": 5.97}, "Yone": {"power": 51.4, "pick": 4.64}, "Zed": {"power": 50.8, "pick": 4.64}, "Ziggs": {"power": 50.2, "pick": 0.6}, "Zilean": {"power": 50.4, "pick": 1.13}, "Zoe": {"power": 50.1, "pick": 1.72}}, "support": {"Alistar": {"power": 50.4, "pick": 1.25}, "Amumu": {"power": 49.6, "pick": 0.55}, "Annie": {"power": 50.4, "pick": 0.69}, "Ashe": {"power": 51.9, "pick": 1.11}, "Bard": {"power": 49.9, "pick": 0.48}, "Blitzcrank": {"power": 52.1, "pick": 4.85}, "Brand": {"power": 49.4, "pick": 4.5}, "Braum": {"power": 50.0, "pick": 1.87}, "Fiddlesticks": {"power": 51.1, "pick": 0.48}, "Galio": {"power": 50.1, "pick": 2.49}, "Heimerdinger": {"power": 50.8, "pick": 2.84}, "Hwei": {"power": 50.4, "pick": 2.29}, "Janna": {"power": 51.3, "pick": 1.04}, "Karma": {"power": 49.0, "pick": 1.87}, "Leona": {"power": 51.4, "pick": 4.16}, "Lulu": {"power": 50.9, "pick": 4.16}, "Lux": {"power": 50.1, "pick": 6.23}, "Maokai": {"power": 50.7, "pick": 1.8}, "Mel": {"power": 51.5, "pick": 1.32}, "Milio": {"power": 51.2, "pick": 1.94}, "Morgana": {"power": 50.1, "pick": 4.85}, "Nami": {"power": 51.1, "pick": 0.55}, "Nautilus": {"power": 51.5, "pick": 4.85}, "Neeko": {"power": 51.8, "pick": 0.62}, "Pantheon": {"power": 49.8, "pick": 4.16}, "Poppy": {"power": 51.8, "pick": 0.62}, "Pyke": {"power": 50.7, "pick": 4.16}, "Rakan": {"power": 51.4, "pick": 1.45}, "Rell": {"power": 49.5, "pick": 0.76}, "Renata": {"power": 51.9, "pick": 0.62}, "Senna": {"power": 51.0, "pick": 4.16}, "Seraphine": {"power": 48.9, "pick": 3.46}, "Shaco": {"power": 49.5, "pick": 3.39}, "Shen": {"power": 51.5, "pick": 1.04}, "Sona": {"power": 51.0, "pick": 1.39}, "Soraka": {"power": 51.4, "pick": 0.76}, "Swain": {"power": 49.0, "pick": 1.8}, "TahmKench": {"power": 48.6, "pick": 0.55}, "Taric": {"power": 50.4, "pick": 1.87}, "Teemo": {"power": 51.3, "pick": 1.59}, "Thresh": {"power": 51.8, "pick": 5.54}, "Velkoz": {"power": 49.4, "pick": 0.62}, "Xerath": {"power": 49.9, "pick": 0.48}, "Yuumi": {"power": 49.6, "pick": 0.48}, "Zilean": {"power": 50.1, "pick": 0.83}, "Zyra": {"power": 51.4, "pick": 3.46}}, "jungle": {"Ambessa": {"power": 50.3, "pick": 0.78}, "Amumu": {"power": 51.8, "pick": 2.35}, "Belveth": {"power": 51.2, "pick": 1.56}, "Brand": {"power": 51.0, "pick": 0.66}, "Briar": {"power": 51.6, "pick": 3.01}, "Diana": {"power": 51.3, "pick": 0.54}, "DrMundo": {"power": 50.9, "pick": 0.42}, "Ekko": {"power": 50.7, "pick": 0.6}, "Elise": {"power": 50.1, "pick": 0.78}, "Evelynn": {"power": 50.7, "pick": 3.01}, "Fiddlesticks": {"power": 51.2, "pick": 0.6}, "Gragas": {"power": 50.6, "pick": 2.41}, "Graves": {"power": 51.1, "pick": 4.81}, "Gwen": {"power": 50.3, "pick": 0.6}, "Hecarim": {"power": 51.0, "pick": 0.42}, "Ivern": {"power": 50.9, "pick": 0.96}, "JarvanIV": {"power": 50.8, "pick": 3.01}, "Jax": {"power": 50.2, "pick": 0.84}, "Karthus": {"power": 51.0, "pick": 1.02}, "Kayn": {"power": 51.2, "pick": 4.51}, "Khazix": {"power": 50.8, "pick": 3.91}, "Kindred": {"power": 50.6, "pick": 2.89}, "LeeSin": {"power": 50.4, "pick": 6.61}, "Lillia": {"power": 51.2, "pick": 0.6}, "Maokai": {"power": 51.1, "pick": 2.53}, "MasterYi": {"power": 51.4, "pick": 3.61}, "Morgana": {"power": 50.0, "pick": 1.5}, "Naafiri": {"power": 50.5, "pick": 0.48}, "Nidalee": {"power": 49.8, "pick": 0.66}, "Nocturne": {"power": 51.7, "pick": 3.01}, "Nunu": {"power": 50.8, "pick": 0.48}, "Olaf": {"power": 50.7, "pick": 1.74}, "Pantheon": {"power": 51.1, "pick": 0.48}, "Poppy": {"power": 50.9, "pick": 0.48}, "Qiyana": {"power": 49.6, "pick": 0.48}, "Rammus": {"power": 51.2, "pick": 1.08}, "RekSai": {"power": 49.9, "pick": 1.14}, "Rengar": {"power": 50.1, "pick": 1.56}, "Sejuani": {"power": 51.0, "pick": 1.2}, "Shaco": {"power": 50.2, "pick": 0.48}, "Shyvana": {"power": 51.1, "pick": 0.66}, "Skarner": {"power": 51.3, "pick": 1.98}, "Sylas": {"power": 50.9, "pick": 0.42}, "Taliyah": {"power": 50.8, "pick": 0.42}, "Talon": {"power": 50.3, "pick": 1.86}, "Teemo": {"power": 49.3, "pick": 1.08}, "Trundle": {"power": 50.9, "pick": 0.42}, "Udyr": {"power": 51.2, "pick": 2.65}, "Vi": {"power": 51.5, "pick": 3.31}, "Viego": {"power": 51.3, "pick": 4.81}, "Volibear": {"power": 51.5, "pick": 1.38}, "Warwick": {"power": 51.6, "pick": 2.41}, "MonkeyKing": {"power": 51.4, "pick": 3.01}, "XinZhao": {"power": 51.9, "pick": 3.31}, "Zaahen": {"power": 51.7, "pick": 0.48}, "Zac": {"power": 51.4, "pick": 1.68}, "Zyra": {"power": 50.6, "pick": 2.29}}, "adc": {"Aphelios": {"power": 50.7, "pick": 4.46}, "Ashe": {"power": 51.0, "pick": 5.95}, "Caitlyn": {"power": 51.2, "pick": 8.18}, "Corki": {"power": 49.0, "pick": 2.08}, "Draven": {"power": 48.9, "pick": 3.72}, "Ezreal": {"power": 50.6, "pick": 9.67}, "Jhin": {"power": 51.0, "pick": 7.44}, "Jinx": {"power": 51.4, "pick": 8.18}, "Kaisa": {"power": 50.9, "pick": 8.93}, "Kalista": {"power": 49.7, "pick": 0.52}, "KogMaw": {"power": 51.2, "pick": 0.74}, "Lucian": {"power": 50.4, "pick": 5.21}, "MissFortune": {"power": 51.5, "pick": 6.7}, "Nilah": {"power": 51.6, "pick": 1.04}, "Samira": {"power": 51.0, "pick": 1.19}, "Senna": {"power": 49.4, "pick": 3.12}, "Sivir": {"power": 51.3, "pick": 1.04}, "Smolder": {"power": 50.8, "pick": 1.12}, "Tristana": {"power": 51.7, "pick": 3.05}, "Twitch": {"power": 50.7, "pick": 0.6}, "Varus": {"power": 50.5, "pick": 0.67}, "Vayne": {"power": 50.8, "pick": 5.95}, "Xayah": {"power": 51.1, "pick": 1.64}, "Yunara": {"power": 48.9, "pick": 2.9}, "Zeri": {"power": 50.3, "pick": 2.46}, "Ziggs": {"power": 51.4, "pick": 3.42}}}, "curated": {"mid|Ahri|Fizz": 44.5, "mid|Ahri|Kassadin": 45.5, "mid|Ahri|Yasuo": 48.5, "mid|Yasuo|Renekton": 41.0, "mid|Yasuo|Pantheon": 43.0, "mid|Yasuo|Akali": 44.0, "mid|Yasuo|Ahri": 51.5, "mid|Yasuo|Zed": 47.0, "mid|Yasuo|Annie": 43.5, "jungle|Rammus|MasterYi": 60.0, "jungle|Rammus|Viego": 57.0, "jungle|Rammus|Kindred": 58.5, "jungle|Rammus|Belveth": 57.5, "jungle|Rammus|Lillia": 44.0, "jungle|Rammus|Karthus": 43.5, "jungle|MasterYi|Jax": 43.0, "jungle|MasterYi|Rammus": 40.0, "jungle|MasterYi|Khazix": 45.0, "jungle|LeeSin|Poppy": 44.5, "jungle|Kindred|Khazix": 44.0, "jungle|Evelynn|RekSai": 44.0, "jungle|Graves|Kindred": 54.0, "jungle|Ivern|Rengar": 43.0, "jungle|Shaco|RekSai": 43.5, "jungle|Nidalee|RekSai": 44.5, "jungle|Karthus|Khazix": 43.0, "top|Malphite|Rumble": 43.0, "top|Malphite|Sylas": 44.0, "top|Malphite|Vayne": 55.0, "adc|Nilah|Xayah": 44.0, "support|Yuumi|Nautilus": 44.5, "support|Yuumi|Leona": 44.0}};
+
+      const ROLE_LABEL = { top: "Top", jungle: "Jungle", mid: "Mid", adc: "Bottom", support: "Support" };
+      const UGG_ROLE = { top: "top", jungle: "jungle", mid: "middle", adc: "adc", support: "support" };
+      const UGG_SLUG_EXCEPTIONS = { MonkeyKing: "wukong", DrMundo: "drmundo", Nunu: "nunu", Renata: "renata" };
+      function uggUrlFor(id, role) {
+        const slug = UGG_SLUG_EXCEPTIONS[id] || id.toLowerCase().replace(/[^a-z]/g, "");
+        return "https://u.gg/lol/champions/" + slug + "/build?role=" + (UGG_ROLE[role] || role);
+      }
+      /* Expected 1st clear — median time to hit level 4 (full first clear), ranked solo
+         queue, no early fight/death/gank. Source: LoL Recommender jungle clear times,
+         labelled patch 26.21, updated 20 Oct 2026, via Boosting Market's jungle tier list.
+         Only the 40 champions measured there appear; everyone else is "not measured". */
+      const CLEAR_TIMES = {
+        Zyra: "2:50", Zed: "2:56", Chogath: "2:57", Udyr: "2:57", Graves: "2:57",
+        Karthus: "2:57", Evelynn: "2:58", Shyvana: "2:59", JarvanIV: "3:00", Diana: "3:00",
+        MonkeyKing: "3:01", Lillia: "3:02", Sejuani: "3:02", Belveth: "3:02", Khazix: "3:02",
+        Rengar: "3:02", Hecarim: "3:03", Viego: "3:03", MasterYi: "3:04", Kayn: "3:04",
+        Nocturne: "3:04", Nunu: "3:05", Amumu: "3:05", LeeSin: "3:05", Qiyana: "3:06",
+        Elise: "3:07", Briar: "3:08", Talon: "3:08", Naafiri: "3:08", Zac: "3:09",
+        Ekko: "3:09", XinZhao: "3:09", Vi: "3:09", Warwick: "3:11", Fiddlesticks: "3:15",
+        Rammus: "3:16", Sylas: "3:18", Nidalee: "3:25", Shaco: "3:25", Kindred: "3:27"
+      };
+      const SCUTTLE_SEC = 210; // first scuttle crab spawns at 3:30
+      function clearInfo(id) {
+        const t = CLEAR_TIMES[id];
+        if (!t) return null;
+        const parts = t.split(":");
+        const sec = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+        let band, cls;
+        if (sec < 178) { band = "Very fast"; cls = "clr-vfast"; }
+        else if (sec <= 183) { band = "Fast"; cls = "clr-fast"; }
+        else if (sec <= 190) { band = "Average"; cls = "clr-avg"; }
+        else { band = "Slow"; cls = "clr-slow"; }
+        return { t, sec, band, cls, margin: SCUTTLE_SEC - sec };
+      }
+      const ROLE_ORDER = ["top", "jungle", "mid", "adc", "support"];
+      const ARCH_LABEL = {
+        AS: "Assassin", DV: "Diver", DU: "Duelist", JG: "Juggernaut", TK: "Tank",
+        CM: "Control mage", BM: "Burst mage", PK: "Poke", EN: "Enchanter",
+        MM: "Marksman", CT: "Engage / catcher", WD: "Warden"
+      };
+      const AFF = {
+        "AS>PK": 2.5, "AS>BM": 2.0, "AS>MM": 2.5, "AS>EN": 3.0, "AS>TK": -2.5, "AS>DU": -1.5, "AS>CM": 1.5,
+        "PK>TK": 2.0, "PK>JG": 2.5, "PK>AS": -2.5, "PK>DV": -2.0, "PK>EN": 1.5, "PK>MM": 1.0,
+        "DV>PK": 2.0, "DV>MM": 1.5, "DV>EN": 2.0, "DV>DU": -1.5, "DV>TK": -1.0, "DV>CM": 1.0,
+        "DU>TK": 1.5, "DU>DV": 1.5, "DU>CM": -1.5, "DU>JG": 1.0, "DU>MM": 0.5,
+        "CM>DU": 1.5, "CM>JG": 1.5, "CM>AS": -1.5, "CM>DV": -1.0, "CM>EN": 0.5,
+        "BM>MM": 1.5, "BM>EN": 1.5, "BM>TK": -1.5, "BM>PK": 0.5,
+        "JG>AS": 1.5, "JG>DV": 1.0, "JG>PK": -2.5, "JG>MM": -1.5, "JG>CM": -1.5,
+        "MM>JG": 1.5, "MM>TK": 1.0, "MM>AS": -2.5, "MM>DV": -1.5, "MM>DU": -0.5,
+        "TK>AS": 2.5, "TK>BM": 1.5, "TK>DU": -1.5, "TK>MM": -1.0, "TK>PK": -2.0,
+        "EN>WD": 1.0, "EN>CT": -2.0, "EN>PK": -1.5, "EN>AS": -3.0,
+        "CT>EN": 2.0, "CT>MM": 1.5, "CT>WD": -1.5, "CT>PK": 1.0,
+        "WD>CT": 1.5, "WD>AS": 1.5, "WD>EN": -1.0
+      };
+      function aff(a, b) {
+        if (a === b) return 0;
+        const k = a + ">" + b, r = b + ">" + a;
+        if (k in AFF) return AFF[k];
+        if (r in AFF) return -AFF[r];
+        return 0;
+      }
+      function fnv(s) {
+        let h = 2166136261;
+        for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+        return (h >>> 0) / 4294967295;
+      }
+      function modelWR(role, a, b) {
+        if (a === b) return 50;
+        const key = role + "|" + a + "|" + b, rkey = role + "|" + b + "|" + a;
+        if (key in DATA.curated) return DATA.curated[key];
+        if (rkey in DATA.curated) return 100 - DATA.curated[rkey];
+        const pa = DATA.pools[role][a], pb = DATA.pools[role][b];
+        const lo = a < b ? a : b, hi = a < b ? b : a;
+        let n = fnv(role + "|" + lo + "|" + hi) * 2 - 1;
+        if (a === hi) n = -n;
+        const va = (DATA.champs[a].vol + DATA.champs[b].vol) / 2;
+        const v = 50 + (pa.power - pb.power) * 0.55
+          + aff(DATA.champs[a].arch, DATA.champs[b].arch) + n * 3.4 * va;
+        return Math.max(36, Math.min(64, v));
+      }
+
+      const imports = {}; // role -> Map("A|B" -> winrate for A vs B)
+      let importVersion = 0;
+      function wr(role, a, b) {
+        const m = imports[role];
+        if (m) {
+          const k = a + "|" + b, rk = b + "|" + a;
+          if (m.has(k)) return m.get(k);
+          if (m.has(rk)) return 100 - m.get(rk);
+        }
+        return modelWR(role, a, b);
+      }
+
+      let statCache = {};
+      function champStats(role, id) {
+        const ck = role + "|" + id + "|" + importVersion;
+        if (statCache[ck]) return statCache[ck];
+        const pool = DATA.pools[role];
+        let tot = 0, exp = 0;
+        const mus = [];
+        for (const e in pool) {
+          if (e === id) continue;
+          const w = pool[e].pick, v = wr(role, id, e);
+          mus.push({ e, v, w });
+          tot += w; exp += w * v;
+        }
+        exp /= tot;
+        let spread = 0, riskW = 0;
+        for (const m of mus) {
+          spread += m.w * (m.v - exp) * (m.v - exp);
+          if (m.v < 47) riskW += m.w;
+        }
+        spread = Math.sqrt(spread / tot);
+        const risk = riskW / tot * 100;
+        let worst = null, best = null;
+        for (const m of mus) {
+          if (!worst || m.v < worst.v) worst = m;
+          if (!best || m.v > best.v) best = m;
+        }
+        const score = Math.max(1, Math.min(99, Math.round(
+          50 + (exp - 50) * 7 - Math.max(0, spread - 3.5) * 5 - risk * 0.40)));
+        const s = { id, exp, spread, risk, score, worst, best, mus };
+        statCache[ck] = s;
+        return s;
+      }
+
+      const state = { role: "jungle", query: "", enemy: "", sort: "score", poolOnly: false, selected: null, filterClearOn: false, filterClearMax: 185, filterWinOn: false, filterWinMin: 51 };
+      const myPool = new Set();
+      const $ = (s) => document.querySelector(s);
+      const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      const fmt = (x, d) => x.toFixed(d == null ? 1 : d);
+      function wrClass(v) { return v >= 52 ? "wr-good" : v >= 50.5 ? "wr-ok" : v >= 48 ? "wr-warn" : "wr-bad"; }
+      const icon = (id, cls) => '<img src="assets/champs/' + id + '.png" alt="" loading="lazy" />';
+      const name = (id) => DATA.champs[id].name;
+
+      function roleCounts() { return ROLE_ORDER.map((r) => [r, Object.keys(DATA.pools[r]).length]); }
+
+      function renderRoles() {
+        $("#roles").innerHTML = roleCounts().map(([r, n]) =>
+          '<button type="button" class="role-btn" data-role="' + r + '" aria-pressed="' + (state.role === r) + '">'
+          + ROLE_LABEL[r] + '<span class="n">' + n + '</span></button>').join("");
+        document.querySelectorAll(".role-btn").forEach((b) =>
+          b.addEventListener("click", () => {
+            state.role = b.dataset.role; state.enemy = ""; state.selected = null;
+            if (typeof draft !== "undefined") draft.role = state.role;
+            renderRoles(); fillEnemy(); renderAll();
+          }));
+      }
+
+      function fillEnemy() {
+        const pool = DATA.pools[state.role];
+        const ids = Object.keys(pool).sort((x, y) => name(x).localeCompare(name(y)));
+        $("#enemy").innerHTML = '<option value="">— nobody yet (blind pick) —</option>' + ids.map((id) =>
+          '<option value="' + id + '">' + esc(name(id)) + "</option>").join("");
+        $("#enemy").value = state.enemy;
+      }
+
+      function rankedIds() {
+        const pool = DATA.pools[state.role];
+        let ids = Object.keys(pool);
+        if (state.poolOnly) ids = ids.filter((id) => myPool.has(id));
+        if (state.query) {
+          const q = state.query.toLowerCase();
+          ids = ids.filter((id) =>
+            name(id).toLowerCase().includes(q) || id.toLowerCase().includes(q)
+            || ARCH_LABEL[DATA.champs[id].arch].toLowerCase().includes(q));
+        }
+        if (state.filterWinOn) {
+          ids = ids.filter((id) => champStats(state.role, id).exp >= state.filterWinMin);
+        }
+        if (state.role === "jungle" && state.filterClearOn) {
+          ids = ids.filter((id) => {
+            const ci = clearInfo(id);
+            return ci && ci.sec <= state.filterClearMax;
+          });
+        }
+        const st = (id) => champStats(state.role, id);
+        const by = {
+          score: (a, b) => st(b).score - st(a).score || st(b).exp - st(a).exp,
+          exp: (a, b) => st(b).exp - st(a).exp,
+          spreadAsc: (a, b) => st(a).spread - st(b).spread,
+          spreadDesc: (a, b) => st(b).spread - st(a).spread,
+          pick: (a, b) => pool[b].pick - pool[a].pick,
+          clear: (a, b) => {
+            const ca = clearInfo(a), cb = clearInfo(b);
+            if (ca && cb) return ca.sec - cb.sec;
+            if (ca) return -1;
+            if (cb) return 1;
+            return name(a).localeCompare(name(b));
+          },
+          name: (a, b) => name(a).localeCompare(name(b))
+        };
+        ids = ids.sort(by[state.sort] || by.score);
+        if (typeof draft !== "undefined" && draft.active) {
+          const used = draftUsedSet();
+          const avail = [], unavail = [];
+          for (const id of ids) (used.has(id) ? unavail : avail).push(id);
+          avail.sort((a, b) => draftScore(state.role, b).total - draftScore(state.role, a).total
+            || champStats(state.role, b).score - champStats(state.role, a).score);
+          return avail.concat(unavail);
+        }
+        return ids;
+      }
+
+      function clearCellHTML(id) {
+        const ci = clearInfo(id);
+        if (!ci) return '<div class="stat clear-cell"><div class="v clr-na">not measured</div><div class="k">1st clear</div></div>';
+        return '<div class="stat clear-cell"><div class="v ' + ci.cls + '">' + ci.t + '</div><div class="k">1st clear · ' + ci.band + "</div></div>";
+      }
+
+      function syncFilterUI() {
+        const jg = state.role === "jungle";
+        const clearOption = $("#clearFilterOption");
+        if (clearOption) clearOption.hidden = !jg;
+        const clearToggle = $("#clearFilterToggle");
+        if (clearToggle) {
+          clearToggle.setAttribute("aria-pressed", String(state.filterClearOn));
+          clearToggle.textContent = state.filterClearOn ? "On" : "Off";
+        }
+        const clearMax = $("#clearMax");
+        if (clearMax) { clearMax.disabled = !state.filterClearOn; clearMax.value = String(state.filterClearMax); }
+        const winToggle = $("#winFilterToggle");
+        if (winToggle) {
+          winToggle.setAttribute("aria-pressed", String(state.filterWinOn));
+          winToggle.textContent = state.filterWinOn ? "On" : "Off";
+        }
+        const winMin = $("#winMin");
+        if (winMin) { winMin.disabled = !state.filterWinOn; winMin.value = String(state.filterWinMin); }
+        const reset = $("#filterReset");
+        if (reset) reset.disabled = !(state.filterClearOn || state.filterWinOn);
+      }
+
+      function syncClearUI() {
+        const jg = state.role === "jungle";
+        $("#list").classList.toggle("has-clear", jg);
+        const head = document.querySelector(".list-head");
+        head.classList.toggle("has-clear", jg);
+        $("#headClear").style.display = jg ? "" : "none";
+        $("#sortClear").hidden = !jg;
+        if (!jg && state.sort === "clear") { state.sort = "score"; $("#sort").value = "score"; }
+        const note = $("#clearNote");
+        if (jg) {
+          note.hidden = false;
+          note.innerHTML = "<b>Expected 1st clear</b> — the median time for the jungler to hit level 4 "
+            + "(complete the first full clear) in ranked solo queue games where they did not fight, die or gank first. "
+            + "Bands: <b>Very fast</b> under 2:58 · <b>Fast</b> 2:58–3:03 · <b>Average</b> 3:04–3:10 · <b>Slow</b> over 3:10. "
+            + "Times: LoL Recommender jungle clear times (labelled patch 26.21, updated 20 Oct 2026), as tabulated by "
+            + "Boosting Market's jungle tier list. Samples can be small — a minimum of 12 games per champion, with some "
+            + "falling back to a 30-day window — and a gap under 5 seconds is noise. Champions with no measured time are "
+            + "marked “not measured”.";
+        } else {
+          note.hidden = true;
+          note.innerHTML = "";
+        }
+      }
+
+      function renderList() {
+        const ids = rankedIds();
+        const el = $("#list");
+        const jg = state.role === "jungle";
+        if (!ids.length) {
+          const filtersOn = state.filterClearOn || state.filterWinOn;
+          el.innerHTML = '<div class="empty-note">No champions match. '
+            + (filtersOn ? "Try loosening the filters above, or use “Clear filters” to see the full list again."
+              : state.poolOnly ? "Star champions with ★ to build your pool, or turn “My pool only” off."
+                               : "Try a different search.") + "</div>";
+          return;
+        }
+        const note = $("#draftListNote");
+        if (note) {
+          if (draft.active) {
+            note.hidden = false;
+            note.textContent = "Live Draft active — this ranking is sorted by draft score for "
+              + ROLE_LABEL[state.role] + ". Banned and already-picked champions are marked unavailable at the bottom.";
+          } else { note.hidden = true; note.textContent = ""; }
+        }
+        el.innerHTML = ids.map((id, i) => {
+          const s = champStats(state.role, id);
+          const c = DATA.champs[id];
+          const dActive = draft.active;
+          const dInfo = dActive ? draftScore(state.role, id) : null;
+          let unavailTag = "";
+          if (dActive) {
+            if (draft.bans.includes(id)) unavailTag = "Banned";
+            else if (draft.enemy.includes(id)) unavailTag = "Enemy pick";
+            else if (draft.ally.includes(id)) unavailTag = "Ally pick";
+          }
+          return '<div class="row' + (state.selected === id ? " selected" : "") + (unavailTag ? " unavailable" : "") + '" role="button" tabindex="0" data-id="' + id + '" aria-expanded="' + (state.selected === id) + '" aria-label="Details for ' + esc(c.name) + '">'
+            + '<div class="rank">' + (i + 1) + "</div>"
+            + '<div class="champ">' + icon(id) + '<div><div class="nm">' + esc(c.name)
+            + (unavailTag ? '<span class="unavail-tag">' + unavailTag + "</span>" : "") + '</div>'
+            + '<div class="arch">' + esc(ARCH_LABEL[c.arch]) + " · " + fmt(DATA.pools[state.role][id].pick) + "% pick rate"
+            + (dInfo && !unavailTag ? ' · <span class="draft-score-tag">Draft ' + dInfo.total + "</span>" : "") + "</div></div></div>"
+            + '<div class="score-cell"><div class="score-num">' + s.score + '</div>'
+            + '<div class="score-bar"><i style="width:' + s.score + '%"></i></div></div>'
+            + '<div class="mobile-stats">'
+            + '<div class="stat exp-cell"><div class="v ' + wrClass(s.exp) + '">' + fmt(s.exp) + '%</div><div class="k">Exp. WR</div></div>'
+            + '<div class="stat spread-cell"><div class="v">±' + fmt(s.spread) + '</div><div class="k">Spread</div></div>'
+            + (jg ? clearCellHTML(id) : "")
+            + '<div class="stat risk-cell"><div class="v">' + fmt(s.risk, 0) + '%</div><div class="k">Counter risk</div></div>'
+            + "</div>"
+            + '<div class="counter-cell">' + icon(s.worst.e) + '<div><span class="k">Worst counter</span>'
+            + '<span class="cn">' + esc(name(s.worst.e)) + '</span> <span class="cw">' + fmt(s.worst.v) + "%</span></div></div>"
+            + '<button type="button" class="pool-btn' + (myPool.has(id) ? " on" : "") + '" data-pool="' + id + '" aria-pressed="' + myPool.has(id) + '" aria-label="Toggle ' + esc(c.name) + ' in my pool">' + (myPool.has(id) ? "★" : "☆") + "</button>"
+            + "</div>"
+            + (state.selected === id ? detailHTML() : "");
+        }).join("");
+        el.querySelectorAll(".row").forEach((row) => {
+          row.addEventListener("click", (ev) => {
+            if (ev.target.closest(".pool-btn")) return;
+            selectChamp(row.dataset.id);
+          });
+          row.addEventListener("keydown", (ev) => {
+            if (ev.target.closest(".pool-btn")) return;
+            if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); selectChamp(row.dataset.id); }
+          });
+        });
+        el.querySelectorAll(".pool-btn").forEach((b) =>
+          b.addEventListener("click", () => togglePool(b.dataset.pool)));
+        const dc = el.querySelector("#detailClose");
+        if (dc) dc.addEventListener("click", () => { state.selected = null; renderList(); });
+      }
+
+      function renderPoolBar() {
+        const bar = $("#poolbar");
+        if (!myPool.size) {
+          bar.className = "poolbar";
+          bar.innerHTML = "";
+          return;
+        }
+        bar.className = "poolbar show";
+        const ids = [...myPool].sort((a, b) => name(a).localeCompare(name(b)));
+        bar.innerHTML = '<span class="lbl">My pool</span>' + ids.map((id) =>
+          '<span class="pool-chip"><img src="assets/champs/' + id + '.png" alt="" />' + esc(name(id))
+          + '<button type="button" data-unpool="' + id + '" aria-label="Remove ' + esc(name(id)) + ' from my pool">×</button></span>').join("");
+        bar.querySelectorAll("[data-unpool]").forEach((b) =>
+          b.addEventListener("click", () => togglePool(b.dataset.unpool)));
+      }
+
+      function togglePool(id) {
+        if (myPool.has(id)) myPool.delete(id); else myPool.add(id);
+        renderPoolBar(); renderList();
+        if (state.enemy) renderEnemy();
+        if (state.selected) renderDetail();
+      }
+
+      function renderEnemy() {
+        const panel = $("#enemyPanel");
+        if (!state.enemy) { panel.className = "enemy-panel"; panel.innerHTML = ""; return; }
+        const e = state.enemy;
+        const pool = DATA.pools[state.role];
+        const answers = Object.keys(pool).filter((id) => id !== e)
+          .map((id) => ({ id, v: wr(state.role, id, e), s: champStats(state.role, id) }))
+          .sort((a, b) => b.v - a.v);
+        const top = answers.slice(0, 8);
+        panel.className = "enemy-panel show";
+        panel.innerHTML = "<h2>They locked " + esc(name(e)) + " — your best answers in " + ROLE_LABEL[state.role] + "</h2>"
+          + '<p class="sub">Ranked by your win rate into ' + esc(name(e)) + " (" + esc(ARCH_LABEL[DATA.champs[e].arch])
+          + ", picked in " + fmt(pool[e].pick) + '% of games). Blindability shown so you can weigh a one-trick answer against a pick that stays safe if the rest of their comp counters you.</p>'
+          + top.map((a, i) =>
+            '<button type="button" class="answer" data-id="' + a.id + '">'
+            + '<span class="rank">' + (i + 1) + "</span>" + icon(a.id)
+            + '<span><span class="an">' + esc(name(a.id)) + "</span>"
+            + (myPool.has(a.id) ? '<span class="pool-tag">In your pool</span>' : "")
+            + '<span class="am" style="display:block">Blindability ' + a.s.score + " · expected WR " + fmt(a.s.exp) + "% overall</span></span>"
+            + '<span class="aw ' + wrClass(a.v) + '">' + fmt(a.v) + "%</span></button>").join("");
+        panel.querySelectorAll(".answer").forEach((b) =>
+          b.addEventListener("click", () => selectChamp(b.dataset.id)));
+      }
+
+      function bellCurveSVG(s) {
+        const W = 680, H = 210, PL = 34, PR = 10, PT = 12, PB = 30;
+        const x0 = 38, x1 = 62;
+        const X = (v) => PL + (v - x0) / (x1 - x0) * (W - PL - PR);
+        const bins = [];
+        for (let b = x0; b < x1; b += 2) {
+          let wsum = 0;
+          for (const m of s.mus) if (m.v >= b && m.v < b + 2) wsum += m.w;
+          bins.push({ b, w: wsum });
+        }
+        const maxW = Math.max.apply(null, bins.map((d) => d.w)) || 1;
+        const Y = (w) => PT + (1 - w / (maxW * 1.15)) * (H - PT - PB);
+        let bars = "";
+        for (const d of bins) {
+          const cx = X(d.b + 1), bw = (X(d.b + 2) - X(d.b)) * 0.72;
+          const col = d.b + 1 < 47 ? "var(--bad)" : d.b + 1 < 50 ? "var(--warn)" : "var(--teal)";
+          bars += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + Y(d.w).toFixed(1) + '" width="' + bw.toFixed(1)
+            + '" height="' + (Y(0) - Y(d.w)).toFixed(1) + '" rx="2" fill="' + col + '" opacity="0.75"><title>'
+            + d.b + "–" + (d.b + 2) + "%: " + fmt(d.w) + "% of enemy picks</title></rect>";
+        }
+        let pts = "";
+        const norm = (v) => Math.exp(-((v - s.exp) * (v - s.exp)) / (2 * s.spread * s.spread)) * maxW;
+        for (let v = x0; v <= x1; v += 0.5) pts += X(v).toFixed(1) + "," + Y(norm(v)).toFixed(1) + " ";
+        let ticks = "";
+        for (let v = 40; v <= 60; v += 5) {
+          ticks += '<line x1="' + X(v) + '" y1="' + (H - PB) + '" x2="' + X(v) + '" y2="' + (H - PB + 5) + '" stroke="var(--line)"/>'
+            + '<text x="' + X(v) + '" y="' + (H - PB + 20) + '" text-anchor="middle" font-size="12" fill="var(--ink-soft)">' + v + "%</text>";
+        }
+        return '<svg viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Matchup win rate distribution bell curve">'
+          + '<line x1="' + X(50) + '" y1="' + PT + '" x2="' + X(50) + '" y2="' + (H - PB) + '" stroke="var(--ink-soft)" stroke-dasharray="4 4"/>'
+          + bars
+          + '<polyline points="' + pts + '" fill="none" stroke="var(--gold-strong)" stroke-width="2.5"/>'
+          + '<line x1="' + X(s.exp) + '" y1="' + PT + '" x2="' + X(s.exp) + '" y2="' + (H - PB) + '" stroke="var(--gold-strong)" stroke-width="2"/>'
+          + '<text x="' + Math.min(X(s.exp) + 7, W - 130) + '" y="' + (PT + 12) + '" font-size="13" font-weight="700" fill="var(--gold-strong)">expected ' + fmt(s.exp) + "%</text>"
+          + ticks + "</svg>";
+      }
+
+      function verdict(s) {
+        if (s.score >= 65) return "A genuinely safe blind pick in this role — the curve is high and tight, so the game looks similar almost every lobby.";
+        if (s.score >= 52) return "Blindable. No matchup in the common pool is a disaster, and the bad ones are rare enough to dodge around.";
+        if (s.score >= 40) return "Pickable blind if it's your comfort pick, but know the counters below — when they show up, the game plan has to change.";
+        return "Risky to blind. A real slice of the enemy pool hard-counters this pick; it's much stronger as a later pick once you've seen their hand.";
+      }
+
+      function mrow(m, best) {
+        return '<div class="mrow">' + icon(m.e) + '<div><div class="mn">' + esc(name(m.e)) + '</div>'
+          + '<div class="mp">' + esc(ARCH_LABEL[DATA.champs[m.e].arch]) + " · " + fmt(DATA.pools[state.role][m.e].pick) + "% of enemy picks</div></div>"
+          + '<span class="mp">' + (best ? "you win" : "they win") + '</span>'
+          + '<span class="mw ' + wrClass(m.v) + '">' + fmt(m.v) + "%</span></div>";
+      }
+
+      function clearBannerHTML(id) {
+        const ci = clearInfo(id);
+        if (!ci) {
+          return '<div class="clear-banner"><div class="cb-main"><span class="cb-v" style="color:var(--ink-soft)">—</span></div>'
+            + '<div><div class="cb-k">Expected 1st clear</div>'
+            + '<div class="cb-d"><b>Not measured.</b> ' + esc(name(id)) + " has no published first-clear time in the source dataset "
+            + "(LoL Recommender, labelled patch 26.21) — so none is shown rather than an estimate.</div></div></div>";
+        }
+        const marginTxt = ci.margin >= 0
+          ? ci.margin + "s before the first scuttle crab spawns (3:30)"
+          : (-ci.margin) + "s after the first scuttle crab spawns (3:30)";
+        return '<div class="clear-banner"><div class="cb-main"><span class="cb-v ' + ci.cls + '">' + ci.t + '</span>'
+          + '<span class="cb-band">' + ci.band + "</span></div>"
+          + '<div><div class="cb-k">Expected 1st clear</div>'
+          + '<div class="cb-d">Finishes <b>' + marginTxt + "</b>. Median time to hit level 4 — a full first clear — "
+          + "in ranked solo queue games with no early fight, death or gank (LoL Recommender, labelled patch 26.21).</div></div></div>";
+      }
+
+      /* The detail panel renders inline, directly under the selected ranking
+         row (see renderList), so opening a champion expands it in place
+         instead of jumping to a shared section at the bottom of the page. */
+      function detailHTML() {
+        if (!state.selected || !DATA.pools[state.role][state.selected]) return "";
+        const id = state.selected, c = DATA.champs[id], s = champStats(state.role, id);
+        const worst5 = [...s.mus].sort((a, b) => a.v - b.v).slice(0, 5);
+        const best5 = [...s.mus].sort((a, b) => b.v - a.v).slice(0, 5);
+        return '<div class="detail show" id="detail">'
+          + '<div class="detail-hero">'
+          + '<div class="art"><img src="assets/loading/' + id + '.jpg" alt="' + esc(c.name) + ' splash art" /></div>'
+          + '<div class="detail-main"><button type="button" class="close-btn" id="detailClose" aria-label="Close details">×</button>'
+          + "<h2>" + esc(c.name) + "</h2>"
+          + '<div class="sub">' + ROLE_LABEL[state.role] + " · " + esc(ARCH_LABEL[c.arch]) + " · picked in "
+          + fmt(DATA.pools[state.role][id].pick) + "% of " + ROLE_LABEL[state.role] + " games</div>"
+          + '<p class="verdict">' + verdict(s) + "</p>"
+          + '<div class="big-stats">'
+          + '<div class="big-stat"><div class="v">' + s.score + '</div><div class="k">Blindability</div><div class="d">out of 99, higher = safer blind</div></div>'
+          + '<div class="big-stat"><div class="v ' + wrClass(s.exp) + '">' + fmt(s.exp) + '%</div><div class="k">Expected WR</div><div class="d">pick-rate weighted, blind</div></div>'
+          + '<div class="big-stat"><div class="v">±' + fmt(s.spread) + '</div><div class="k">Spread</div><div class="d">how swingy the matchups are</div></div>'
+          + '<div class="big-stat"><div class="v">' + fmt(s.risk, 0) + '%</div><div class="k">Counter risk</div><div class="d">chance of a sub-47% matchup</div></div>'
+          + "</div>"
+          + (state.role === "jungle" ? clearBannerHTML(id) : "")
+          + '<a class="ugg-link" href="' + uggUrlFor(id, state.role) + '" target="_blank" rel="noopener noreferrer">Recommended build on U.GG — ' + esc(c.name) + " " + ROLE_LABEL[state.role] + ' <span class="ext" aria-hidden="true">↗</span></a>'
+          + '<div class="ugg-note">Runes, summoner spells, skill order, and starting &amp; core items for this role on the current patch — opens on U.GG in a new tab.</div>'
+          + "</div></div>"
+          + '<div class="chart-box"><h3>The matchup bell curve</h3>'
+          + '<p class="cap">Each bar is a slice of the enemy pool by win rate; red slices are counter territory (under 47%). The gold curve is the bell curve those matchups form — wide and low means coin-flip lobbies, tall and narrow means the same game every time.</p>'
+          + bellCurveSVG(s) + "</div>"
+          + '<div class="match-cols"><div><h3>Hardest matchups</h3>'
+          + worst5.map((m) => mrow(m, false)).join("")
+          + '</div><div><h3>Best matchups</h3>'
+          + best5.map((m) => mrow(m, true)).join("")
+          + "</div></div></div>";
+      }
+
+      function renderDetail() { /* detail markup is emitted inline by renderList via detailHTML() */ }
+
+      function selectChamp(id) {
+        // Clicking the open champion collapses it; any other champion moves
+        // the expansion to its row. No scrolling: the row stays where it was.
+        state.selected = state.selected === id ? null : id;
+        renderList(); renderDetail();
+      }
+
+      function renderAll() { syncClearUI(); syncFilterUI(); renderDraft(); renderList(); renderPoolBar(); renderEnemy(); renderDetail(); }
+
+      /* ---------- Live Draft ---------- */
+      const draft = { active: false, role: "jungle", ally: [], enemy: [], bans: [] };
+      const DRAFT_LIMITS = { ally: 5, enemy: 5 };
+      let draftTarget = "ally";
+      let draftGridQuery = "";
+      const DRAFT_TARGET_LABEL = { ally: "ally pick", enemy: "enemy pick", bans: "ban" };
+      /* Damage profile model: mages/enchanters deal magic; marksmen and most
+         fighters/assassins deal physical; tanks and engage supports are mixed.
+         AP exceptions are the AP assassins/fighters hiding in physical archetypes. */
+      const AP_EXCEPTIONS = new Set(["Akali", "Diana", "Ekko", "Evelynn", "Fizz", "Gwen", "Kassadin", "Katarina", "Leblanc", "Mordekaiser", "Nidalee", "Sylas"]);
+      function dmgOf(id) {
+        const a = DATA.champs[id].arch;
+        if (a === "CM" || a === "BM" || a === "EN") return "AP";
+        if (a === "MM") return "AD";
+        if (a === "PK") return (id === "Jayce" || id === "Varus") ? "AD" : "AP";
+        if (a === "TK" || a === "CT" || a === "WD") return "Mixed";
+        if (id === "Shaco") return "Mixed";
+        if (AP_EXCEPTIONS.has(id)) return "AP";
+        return "AD";
+      }
+      const FRONTLINE_ARCH = { TK: 1, JG: 1, WD: 1, DV: 0.5 };
+      const CC_BY_ARCH = { TK: 3, CT: 3, WD: 3, JG: 2, CM: 2, BM: 2, EN: 2, DV: 1, PK: 1, AS: 1, DU: 1, MM: 1 };
+      function draftUsedSet() { return new Set([...draft.ally, ...draft.enemy, ...draft.bans]); }
+
+      function draftCounter(role, id) {
+        if (!draft.enemy.length) return { score: 50, wr: null, counterpart: null };
+        const myArch = DATA.champs[id].arch;
+        let wsum = 0, vsum = 0, counterpart = null;
+        for (const e of draft.enemy) {
+          let v, w;
+          if (DATA.pools[role][e]) {
+            // Enemy who can play my role: the lane counterpart — real model matchup, heavy weight.
+            v = wr(role, id, e); w = 3;
+            if (!counterpart || v < counterpart.v) counterpart = { e, v };
+          } else {
+            // Other locked enemies: archetype affinity from the same model, low weight; neutral 50 when the model has no affinity.
+            v = 50 + aff(myArch, DATA.champs[e].arch) * 1.5; w = 1;
+          }
+          wsum += w; vsum += w * v;
+        }
+        const wwr = vsum / wsum;
+        return { score: Math.max(2, Math.min(98, Math.round(50 + (wwr - 50) * 4))), wr: wwr, counterpart };
+      }
+
+      function draftSynergy(role, id) {
+        const allies = draft.ally, c = DATA.champs[id];
+        if (!allies.length) return { score: 50, parts: [] };
+        let score = 50;
+        const parts = [];
+        const allyNames = allies.slice(0, 2).map((a) => name(a)).join(" + ");
+        // Damage-profile balance
+        let ad = 0, ap = 0;
+        for (const a of allies) { const d = dmgOf(a); if (d === "AD") ad++; else if (d === "AP") ap++; else { ad += 0.5; ap += 0.5; } }
+        const cd = dmgOf(id);
+        if (ad >= 2 && ap === 0) {
+          if (cd === "AP") { score += 12; parts.push({ pts: 12, text: "Brings the AP your all-AD comp is missing" }); }
+          else if (cd === "AD") { score -= 6; parts.push({ pts: -6, text: "Stacks more AD onto an all-AD comp" }); }
+        } else if (ap >= 2 && ad === 0) {
+          if (cd === "AD") { score += 12; parts.push({ pts: 12, text: "Brings the AD your all-AP comp is missing" }); }
+          else if (cd === "AP") { score -= 6; parts.push({ pts: -6, text: "Stacks more AP onto an all-AP comp" }); }
+        } else if (ad !== ap) {
+          const minority = ad < ap ? "AD" : "AP";
+          if (cd === minority) { score += 5; parts.push({ pts: 5, text: "Balances your damage with the " + minority + " your comp is short on" }); }
+        }
+        // Frontline gap
+        const allyFront = allies.reduce((s, a) => s + (FRONTLINE_ARCH[DATA.champs[a].arch] || 0), 0);
+        const myFront = FRONTLINE_ARCH[c.arch] || 0;
+        if (allyFront < 1) {
+          if (myFront >= 1) { score += 10; parts.push({ pts: 10, text: "Adds the frontline your " + allyNames + " lack" }); }
+          else if (myFront === 0 && (c.arch === "MM" || c.arch === "EN" || c.arch === "PK")) { score -= 4; parts.push({ pts: -4, text: "Leaves your comp with no frontline" }); }
+        } else if (myFront >= 1) { score += 2; parts.push({ pts: 2, text: "Reinforces your frontline alongside " + allyNames }); }
+        // Crowd control
+        const allyCC = allies.reduce((s, a) => s + (CC_BY_ARCH[DATA.champs[a].arch] || 0), 0);
+        const myCC = CC_BY_ARCH[c.arch] || 0;
+        if (allyCC <= 3 && myCC >= 2) { score += 7; parts.push({ pts: 7, text: "Adds crowd control your comp is short on" }); }
+        else if (myCC >= 3) { score += 3; parts.push({ pts: 3, text: "Brings heavy crowd control" }); }
+        // Engage / peel / poke coherence
+        const mmAlly = allies.find((a) => DATA.champs[a].arch === "MM");
+        if (mmAlly && (c.arch === "EN" || c.arch === "WD" || c.arch === "TK")) { score += 6; parts.push({ pts: 6, text: "Peel and protection for your " + name(mmAlly) }); }
+        const diveAlly = allies.find((a) => ["DV", "AS", "DU"].includes(DATA.champs[a].arch));
+        if (diveAlly && ["DV", "CT", "TK", "AS"].includes(c.arch)) { score += 6; parts.push({ pts: 6, text: "Dives in alongside your " + name(diveAlly) }); }
+        const pokeAlly = allies.find((a) => DATA.champs[a].arch === "PK");
+        if (pokeAlly && (c.arch === "PK" || c.arch === "CM")) { score += 5; parts.push({ pts: 5, text: "Extends the poke of your " + name(pokeAlly) }); }
+        const enAlly = allies.find((a) => DATA.champs[a].arch === "EN");
+        if (enAlly && (c.arch === "MM" || c.arch === "DU")) { score += 4; parts.push({ pts: 4, text: "A carry for your " + name(enAlly) + " to empower" }); }
+        return { score: Math.max(5, Math.min(97, Math.round(score))), parts };
+      }
+
+      let draftCache = { sig: "", map: {} };
+      function draftSig() {
+        return state.role + "|" + draft.ally.join(",") + "|" + draft.enemy.join(",") + "|" + draft.bans.join(",") + "|" + importVersion;
+      }
+      function draftScore(role, id) {
+        const sig = draftSig();
+        if (draftCache.sig !== sig) draftCache = { sig, map: {} };
+        if (draftCache.map[id]) return draftCache.map[id];
+        const blind = champStats(role, id);
+        const counter = draftCounter(role, id);
+        const syn = draftSynergy(role, id);
+        const counterpartLocked = draft.enemy.some((e) => !!DATA.pools[role][e]);
+        let wC, wS, wB;
+        if (counterpartLocked) { wC = 0.55; wS = 0.25; wB = 0.20; }
+        else if (draft.enemy.length) { wC = 0.30; wS = 0.30; wB = 0.40; }
+        else if (draft.ally.length) { wC = 0.10; wS = 0.35; wB = 0.55; }
+        else { wC = 0; wS = 0; wB = 1; }
+        const total = Math.max(1, Math.min(99, Math.round(wC * counter.score + wS * syn.score + wB * blind.score)));
+        const reasons = [];
+        if (counter.counterpart) {
+          reasons.push({ pts: Math.abs(counter.counterpart.v - 50) * 2 + (counterpartLocked ? 6 : 0), text: "Model " + fmt(counter.counterpart.v) + "% vs their " + name(counter.counterpart.e) });
+        } else if (draft.enemy.length && counter.wr != null && (counter.wr >= 53 || counter.wr <= 47)) {
+          reasons.push({ pts: Math.abs(counter.wr - 50) * 2, text: "Model " + fmt(counter.wr) + "% across their locked picks" });
+        }
+        for (const p of syn.parts) if (p.pts >= 4) reasons.push(p);
+        if (!counterpartLocked && blind.score >= 60) {
+          reasons.push({ pts: 8, text: "Safe blind — " + blind.score + " blindability with only ±" + fmt(blind.spread) + " spread" });
+        }
+        reasons.sort((a, b) => b.pts - a.pts);
+        const picked = reasons.slice(0, 2).map((r) => r.text);
+        if (!picked.length) picked.push("Balanced fit — " + fmt(blind.exp) + "% expected win rate blind, ±" + fmt(blind.spread) + " spread");
+        const out = { total, counter, synergy: syn, blind, counterpartLocked, weights: { wC, wS, wB }, reasons: picked };
+        draftCache.map[id] = out;
+        return out;
+      }
+      function draftCandidates() {
+        const used = draftUsedSet();
+        return Object.keys(DATA.pools[state.role])
+          .filter((id) => !used.has(id))
+          .map((id) => ({ id, d: draftScore(state.role, id) }))
+          .sort((a, b) => b.d.total - a.d.total || b.d.blind.score - a.d.blind.score);
+      }
+
+      function renderDraftChips(group, ids) {
+        const box = $("#draft" + group + "Chips");
+        if (!box) return;
+        const total = group === "Ally" ? DRAFT_LIMITS.ally : group === "Enemy" ? DRAFT_LIMITS.enemy : Math.max(5, ids.length);
+        const isBan = group === "Ban";
+        let html = ids.map((id) =>
+          '<button type="button" class="draft-slot filled' + (isBan ? " ban-slot" : "") + '" data-draft-remove="' + group + ":" + id + '" aria-label="Remove ' + esc(name(id)) + '" title="Tap to remove ' + esc(name(id)) + '">'
+          + '<img src="assets/champs/' + id + '.png" alt="" /><span class="slot-x" aria-hidden="true">×</span>'
+          + '<span class="slot-name">' + esc(name(id)) + "</span></button>").join("");
+        for (let i = ids.length; i < total; i++) {
+          html += '<span class="draft-slot empty" aria-hidden="true"><span class="slot-empty-icon">+</span><span class="slot-name">Empty</span></span>';
+        }
+        box.innerHTML = html;
+        box.querySelectorAll("[data-draft-remove]").forEach((b) =>
+          b.addEventListener("click", () => {
+            const parts = b.dataset.draftRemove.split(":");
+            const key = parts[0] === "Ally" ? "ally" : parts[0] === "Enemy" ? "enemy" : "bans";
+            draft[key] = draft[key].filter((x) => x !== parts[1]);
+            renderDraft(); renderList();
+          }));
+      }
+
+      function renderDraftGrid() {
+        const grid = $("#draftGrid");
+        if (!grid) return;
+        document.querySelectorAll("[data-draft-target]").forEach((b) =>
+          b.setAttribute("aria-pressed", String(b.dataset.draftTarget === draftTarget)));
+        const full = (draftTarget === "ally" && draft.ally.length >= DRAFT_LIMITS.ally)
+          || (draftTarget === "enemy" && draft.enemy.length >= DRAFT_LIMITS.enemy);
+        const hint = $("#draftGridHint");
+        if (hint) hint.textContent = full
+          ? DRAFT_TARGET_LABEL[draftTarget] + " is full — tap a champion in its tray to remove one first"
+          : "Tap a champion to add as " + DRAFT_TARGET_LABEL[draftTarget];
+        const q = draftGridQuery.trim().toLowerCase();
+        const matches = Object.keys(DATA.champs)
+          .filter((id) => !q || name(id).toLowerCase().includes(q) || id.toLowerCase().includes(q))
+          .sort((a, b) => name(a).localeCompare(name(b)));
+        if (!matches.length) {
+          grid.innerHTML = '<span class="draft-grid-empty">No champions match that filter.</span>';
+          return;
+        }
+        grid.innerHTML = matches.map((id) => {
+          const inAlly = draft.ally.includes(id), inEnemy = draft.enemy.includes(id), inBan = draft.bans.includes(id);
+          const used = inAlly || inEnemy || inBan;
+          const cls = inBan ? " is-banned" : used ? " is-picked" : "";
+          const state = inBan ? "Banned" : inAlly ? "Ally" : inEnemy ? "Enemy" : "";
+          return '<button type="button" class="draft-tile' + cls + '" data-grid-pick="' + id + '"'
+            + (used ? " disabled" : "") + ' aria-label="' + esc(name(id)) + (used ? " (" + state.toLowerCase() + ")" : "") + '">'
+            + '<img src="assets/champs/' + id + '.png" alt="" loading="lazy" />'
+            + (state ? '<span class="tile-state">' + state + "</span>" : "")
+            + (inBan ? '<span class="tile-ban-x" aria-hidden="true">✕</span>' : "")
+            + '<span class="tile-name">' + esc(name(id)) + "</span></button>";
+        }).join("");
+        grid.querySelectorAll("[data-grid-pick]").forEach((b) =>
+          b.addEventListener("click", () => addDraftPick(draftTarget, b.dataset.gridPick)));
+      }
+
+      function renderDraft() {
+        const toggle = $("#draftToggle");
+        if (!toggle) return;
+        toggle.setAttribute("aria-pressed", String(draft.active));
+        toggle.textContent = draft.active ? "End Live Draft" : "Start Live Draft";
+        $("#draftBody").hidden = !draft.active;
+        const sortSel = $("#sort");
+        if (sortSel) sortSel.disabled = draft.active;
+        if (!draft.active) return;
+        draft.role = state.role;
+        $("#draftRole").value = state.role;
+        $("#draftStatus").textContent = draft.ally.length + " allies · " + draft.enemy.length + " enemies · "
+          + draft.bans.length + " bans — recommendations update as you type.";
+        $("#draftAllyCount").textContent = draft.ally.length + " / " + DRAFT_LIMITS.ally;
+        $("#draftEnemyCount").textContent = draft.enemy.length + " / " + DRAFT_LIMITS.enemy;
+        $("#draftBanCount").textContent = String(draft.bans.length);
+        $("#draftAllyInput").disabled = draft.ally.length >= DRAFT_LIMITS.ally;
+        $("#draftEnemyInput").disabled = draft.enemy.length >= DRAFT_LIMITS.enemy;
+        renderDraftChips("Ally", draft.ally);
+        renderDraftChips("Enemy", draft.enemy);
+        renderDraftChips("Ban", draft.bans);
+        renderDraftGrid();
+        const recs = $("#draftRecs");
+        const top = draftCandidates().slice(0, 3);
+        const w = top.length ? top[0].d.weights : { wC: 0, wS: 0, wB: 1 };
+        $("#draftWeights").textContent = !draft.ally.length && !draft.enemy.length
+          ? "No picks yet — ranked by blind safety until picks come in"
+          : "Weights — Counter " + Math.round(w.wC * 100) + "% · Synergy " + Math.round(w.wS * 100) + "% · Blind safety " + Math.round(w.wB * 100) + "%"
+            + (top.length && top[0].d.counterpartLocked ? " (your lane opponent is locked, so Counter leads)" : " (lane opponent not locked yet, so Blind safety leads)");
+        if (!top.length) {
+          recs.innerHTML = '<div class="draft-empty">Every ' + ROLE_LABEL[state.role] + " champion is banned or picked — clear a pick above to see options again.</div>";
+          return;
+        }
+        recs.innerHTML = '<div class="draft-top">' + top.map((t, i) => {
+          const d = t.d, c = DATA.champs[t.id];
+          const counterVal = draft.enemy.length
+            ? fmt(d.counter.wr) + "% model WR"
+            : "no picks yet";
+          return '<button type="button" class="draft-card' + (i === 0 ? " first" : "") + '" data-draft-pick="' + t.id + '">'
+            + '<span class="draft-card-top">' + icon(t.id)
+            + '<span><span class="dn">#' + (i + 1) + " " + esc(c.name) + "</span>"
+            + (myPool.has(t.id) ? '<span class="pool-tag">In your pool</span>' : "")
+            + '<span class="da" style="display:block">' + esc(ARCH_LABEL[c.arch]) + " · " + ROLE_LABEL[state.role] + "</span></span>"
+            + '<span class="dscore"><span class="v">' + d.total + '</span><span class="k" style="display:block">Draft score</span></span></span>'
+            + '<span class="bd-row"><span class="bk">Counter</span><span class="bd-bar"><i style="width:' + d.counter.score + '%"></i></span><span class="bv">' + d.counter.score + " · " + counterVal + "</span></span>"
+            + '<span class="bd-row"><span class="bk">Synergy</span><span class="bd-bar"><i style="width:' + d.synergy.score + '%"></i></span><span class="bv">' + d.synergy.score + " · model-based</span></span>"
+            + '<span class="bd-row"><span class="bk">Blind safety</span><span class="bd-bar"><i style="width:' + d.blind.score + '%"></i></span><span class="bv">' + d.blind.score + " · " + fmt(d.blind.exp) + "% exp. WR</span></span>"
+            + '<span class="draft-reasons" style="display:block">' + d.reasons.map((r) => '<span style="display:block" class="dr-li">▸ ' + esc(r) + "</span>").join("") + "</span>"
+            + "</button>";
+        }).join("") + "</div>";
+        recs.querySelectorAll("[data-draft-pick]").forEach((b) =>
+          b.addEventListener("click", () => selectChamp(b.dataset.draftPick)));
+      }
+
+      function addDraftPick(key, id) {
+        if (draftUsedSet().has(id)) return;
+        if (key === "ally" && draft.ally.length >= DRAFT_LIMITS.ally) return;
+        if (key === "enemy" && draft.enemy.length >= DRAFT_LIMITS.enemy) return;
+        draft[key].push(id);
+        renderDraft(); renderList();
+      }
+
+      function wireDraftPicker(inputId, resultsId, key) {
+        const input = $("#" + inputId), box = $("#" + resultsId);
+        if (!input || !box) return;
+        const close = () => { box.hidden = true; box.innerHTML = ""; };
+        const show = () => {
+          const q = input.value.trim().toLowerCase();
+          const used = draftUsedSet();
+          const matches = Object.keys(DATA.champs)
+            .filter((id) => !used.has(id) && (!q || name(id).toLowerCase().includes(q) || id.toLowerCase().includes(q)))
+            .sort((a, b) => name(a).localeCompare(name(b)))
+            .slice(0, 10);
+          if (!matches.length) { close(); return; }
+          box.innerHTML = matches.map((id) =>
+            '<button type="button" class="draft-result" data-add="' + id + '">'
+            + '<img src="assets/champs/' + id + '.png" alt="" /><span>' + esc(name(id)) + '</span>'
+            + '<span class="ra">' + esc(ARCH_LABEL[DATA.champs[id].arch]) + "</span></button>").join("");
+          box.hidden = false;
+          box.querySelectorAll("[data-add]").forEach((b) =>
+            b.addEventListener("mousedown", (ev) => {
+              ev.preventDefault();
+              addDraftPick(key, b.dataset.add);
+              input.value = ""; close(); input.focus();
+            }));
+        };
+        input.addEventListener("input", show);
+        input.addEventListener("focus", show);
+        input.addEventListener("blur", () => setTimeout(close, 150));
+        input.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter") { const first = box.querySelector("[data-add]"); if (first) { ev.preventDefault(); addDraftPick(key, first.dataset.add); input.value = ""; close(); } }
+          if (ev.key === "Escape") close();
+        });
+      }
+
+      const DRAFT_ROLE_ALIASES = { top: "top", jungle: "jungle", mid: "mid", middle: "mid", adc: "adc", bottom: "adc", bot: "adc", support: "support", sup: "support" };
+      function applyDraftImport(obj, sourceLabel) {
+        const status = $("#draftPasteStatus");
+        const seen = new Set();
+        const resolveList = (arr, cap) => {
+          const out = [];
+          for (const raw of arr || []) {
+            const id = resolveChamp(String(raw));
+            if (id && !seen.has(id)) { seen.add(id); out.push(id); if (cap && out.length >= cap) break; }
+          }
+          return out;
+        };
+        const ally = resolveList(obj.ally, DRAFT_LIMITS.ally);
+        const enemy = resolveList(obj.enemy, DRAFT_LIMITS.enemy);
+        const bans = resolveList(obj.bans, 0);
+        const roleKey = obj.role ? DRAFT_ROLE_ALIASES[String(obj.role).trim().toLowerCase()] : null;
+        if (roleKey) { state.role = roleKey; state.enemy = ""; state.selected = null; }
+        draft.ally = ally; draft.enemy = enemy; draft.bans = bans;
+        draft.active = true; draft.role = state.role;
+        renderRoles(); fillEnemy(); renderAll();
+        if (status) {
+          status.className = "draft-import-status";
+          status.textContent = "Loaded " + sourceLabel + ": " + ally.length + " allies, " + enemy.length
+            + " enemies, " + bans.length + " bans" + (roleKey ? ", role " + ROLE_LABEL[state.role] : "") + ". Recommendations updated.";
+        }
+        return true;
+      }
+      function parseDraftText(text) {
+        const t = (text || "").trim();
+        if (!t) return null;
+        if (t.startsWith("{")) {
+          try {
+            const j = JSON.parse(t);
+            return { role: j.role, ally: j.ally || [], enemy: j.enemy || [], bans: j.bans || [] };
+          } catch (e) { return null; }
+        }
+        let qs = t;
+        const qi = qs.indexOf("?");
+        if (qi >= 0) qs = qs.slice(qi + 1);
+        const p = new URLSearchParams(qs);
+        const list = (k) => { const v = p.get(k); return v ? v.split(",").map((s) => s.trim()).filter(Boolean) : []; };
+        if (!p.has("role") && !p.has("ally") && !p.has("enemy") && !p.has("bans")) return null;
+        return { role: p.get("role"), ally: list("ally"), enemy: list("enemy"), bans: list("bans") };
+      }
+      function loadDraftFromPaste() {
+        const status = $("#draftPasteStatus");
+        const parsed = parseDraftText($("#draftPaste").value);
+        if (!parsed) {
+          if (status) { status.className = "draft-import-status err"; status.textContent = "Couldn't read that — paste link parameters (role=jungle&ally=…&enemy=…&bans=…) or JSON with role / ally / enemy / bans."; }
+          return;
+        }
+        applyDraftImport(parsed, "pasted draft");
+      }
+      function draftFromURL() {
+        const p = new URLSearchParams(location.search);
+        if (!p.has("live") && !p.has("ally") && !p.has("enemy") && !p.has("bans")) return;
+        const list = (k) => { const v = p.get(k); return v ? v.split(",").map((s) => s.trim()).filter(Boolean) : []; };
+        applyDraftImport({ role: p.get("role"), ally: list("ally"), enemy: list("enemy"), bans: list("bans") }, "link draft");
+        const panel = $("#draftPanel");
+        if (panel) panel.scrollIntoView({ block: "start" });
+      }
+      function wireDraft() {
+        $("#draftToggle").addEventListener("click", () => {
+          draft.active = !draft.active;
+          if (draft.active) draft.role = state.role;
+          renderDraft(); renderList();
+        });
+        $("#draftRole").addEventListener("change", (e) => {
+          state.role = e.target.value; state.enemy = ""; state.selected = null;
+          draft.role = state.role;
+          renderRoles(); fillEnemy(); renderAll();
+        });
+        $("#draftClear").addEventListener("click", () => {
+          draft.ally = []; draft.enemy = []; draft.bans = [];
+          const st = $("#draftPasteStatus"); if (st) { st.className = "draft-import-status"; st.textContent = ""; }
+          renderDraft(); renderList();
+        });
+        $("#draftLoad").addEventListener("click", loadDraftFromPaste);
+        $("#draftPaste").addEventListener("paste", () => setTimeout(loadDraftFromPaste, 50));
+        wireDraftPicker("draftAllyInput", "draftAllyResults", "ally");
+        wireDraftPicker("draftEnemyInput", "draftEnemyResults", "enemy");
+        wireDraftPicker("draftBanInput", "draftBanResults", "bans");
+        document.querySelectorAll("[data-draft-target]").forEach((b) =>
+          b.addEventListener("click", () => { draftTarget = b.dataset.draftTarget; renderDraftGrid(); }));
+        const gridToggle = $("#draftGridToggle");
+        if (gridToggle) gridToggle.addEventListener("click", () => {
+          const board = $("#draftBoard");
+          const collapsed = board.classList.toggle("grid-collapsed");
+          gridToggle.setAttribute("aria-expanded", String(!collapsed));
+          gridToggle.textContent = collapsed ? "Show champion grid" : "Hide champion grid";
+        });
+        const gridSearch = $("#draftGridSearch");
+        if (gridSearch) gridSearch.addEventListener("input", () => { draftGridQuery = gridSearch.value; renderDraftGrid(); });
+      }
+
+      /* ---------- CSV import ---------- */
+      function resolveChamp(token) {
+        const t = token.trim();
+        if (!t) return null;
+        if (DATA.champs[t]) return t;
+        const squashed = t.replace(/[^a-z]/gi, "").toLowerCase();
+        for (const id in DATA.champs) {
+          if (id.toLowerCase() === squashed) return id;
+          if (DATA.champs[id].name.replace(/[^a-z]/gi, "").toLowerCase() === squashed) return id;
+          if (DATA.champs[id].name.toLowerCase() === t.toLowerCase()) return id;
+        }
+        return null;
+      }
+      function applyCSV() {
+        const status = $("#csvStatus");
+        const lines = $("#csvText").value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+        const map = new Map(imports[state.role] || []);
+        let applied = 0; const skipped = [];
+        for (const line of lines) {
+          if (/^champion\s*,/i.test(line)) continue;
+          const parts = line.split(",").map((p) => p.trim());
+          if (parts.length < 3) { skipped.push(line); continue; }
+          const a = resolveChamp(parts[0]), b = resolveChamp(parts[1]);
+          const v = parseFloat(parts[2]);
+          if (!a || !b || a === b || isNaN(v) || !DATA.pools[state.role][a] || !DATA.pools[state.role][b]) {
+            skipped.push(line); continue;
+          }
+          map.set(a + "|" + b, Math.max(0, Math.min(100, v)));
+          applied++;
+        }
+        if (applied) {
+          imports[state.role] = map; importVersion++; statCache = {};
+          renderAll();
+        }
+        status.className = "import-status" + (skipped.length ? " err" : "");
+        status.textContent = applied
+          ? "Applied " + applied + " imported matchup(s) to " + ROLE_LABEL[state.role] + "."
+            + (skipped.length ? " Skipped " + skipped.length + " row(s) I couldn't read: " + skipped.slice(0, 3).join(" · ") : "")
+          : "No rows applied — check the format: champion,enemy,winrate with both champions in this role.";
+      }
+      function downloadTemplate() {
+        const pool = DATA.pools[state.role];
+        const ids = Object.keys(pool);
+        let csv = "champion,enemy,winrate\n";
+        for (const a of ids) for (const b of ids) {
+          if (a !== b) csv += a + "," + b + "," + fmt(wr(state.role, a, b)) + "\n";
+        }
+        const blob = new Blob([csv], { type: "text/csv" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "blindability-" + state.role + "-matchups.csv";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      }
+
+      /* ---------- wire up ---------- */
+      $("#search").addEventListener("input", (e) => { state.query = e.target.value; renderList(); });
+      $("#enemy").addEventListener("change", (e) => { state.enemy = e.target.value; renderEnemy(); });
+      $("#sort").addEventListener("change", (e) => { state.sort = e.target.value; renderList(); });
+      $("#poolToggle").addEventListener("click", (e) => {
+        state.poolOnly = !state.poolOnly;
+        e.currentTarget.setAttribute("aria-pressed", state.poolOnly);
+        renderList();
+      });
+      $("#clearFilterToggle").addEventListener("click", () => {
+        state.filterClearOn = !state.filterClearOn;
+        syncFilterUI(); renderList();
+      });
+      $("#winFilterToggle").addEventListener("click", () => {
+        state.filterWinOn = !state.filterWinOn;
+        syncFilterUI(); renderList();
+      });
+      $("#clearMax").addEventListener("change", (e) => {
+        state.filterClearMax = parseInt(e.target.value, 10);
+        renderList();
+      });
+      $("#winMin").addEventListener("change", (e) => {
+        state.filterWinMin = parseFloat(e.target.value);
+        renderList();
+      });
+      $("#filterReset").addEventListener("click", () => {
+        state.filterClearOn = false;
+        state.filterWinOn = false;
+        syncFilterUI(); renderList();
+      });
+      $("#csvApply").addEventListener("click", applyCSV);
+      $("#csvTemplate").addEventListener("click", downloadTemplate);
+      $("#csvReset").addEventListener("click", () => {
+        delete imports[state.role]; importVersion++; statCache = {};
+        $("#csvStatus").className = "import-status";
+        $("#csvStatus").textContent = ROLE_LABEL[state.role] + " reset to the modeled dataset.";
+        renderAll();
+      });
+
+      wireDraft();
+      renderRoles();
+      fillEnemy();
+      draftFromURL();
+      renderAll();
+    </script>
+  </body>
+</html>

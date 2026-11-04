@@ -1,0 +1,9 @@
+asset_cache/
+app_profile/
+dist/
+build/
+*.spec
+__pycache__/
+build_log.txt
+tool_version.txt
+update_config.json
