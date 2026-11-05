@@ -429,7 +429,27 @@
       .draft-reasons { margin: 11px 0 0; padding: 0; list-style: none; }
       .draft-reasons li { font-size: 14px; padding: 5px 0 0; color: var(--ink); }
       .draft-reasons li::before { content: "▸ "; color: var(--gold-strong); font-weight: 700; }
+      /* ---------- per-enemy matchup data (shown, not hidden in the average) ---------- */
+      .mu-list { display: block; margin-top: 11px; padding-top: 9px; border-top: 1px dashed var(--line); }
+      .mu-head { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 4px; }
+      .mu-row { display: flex; align-items: center; gap: 7px; font-size: 13.5px; padding: 3px 0; }
+      .mu-row img { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); flex: none; }
+      .mu-row .mu-nm { font-weight: 600; }
+      .mu-row .mu-role { color: var(--ink-soft); font-size: 12.5px; white-space: nowrap; }
+      .mu-row .mu-wr { margin-left: auto; font-weight: 700; white-space: nowrap; }
+      .mu-src {
+        font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+        border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; color: var(--ink-soft); white-space: nowrap;
+      }
+      .mu-src.csv { color: var(--teal); border-color: var(--teal); }
+      .mu-src.kit { color: var(--bad); border-color: var(--bad); }
+      .draft-vs { padding: 12px 0 2px; }
+      .draft-vs h3 { font-size: 18px; margin-bottom: 4px; }
+      .draft-vs .cap { color: var(--ink-soft); font-size: 14px; margin: 0 0 8px; }
+      .draft-vs .mu-list { margin-top: 0; padding-top: 0; border-top: 0; }
       .draft-empty { margin-top: 12px; color: var(--ink-soft); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-input); padding: 12px 14px; }
+      .draft-heldout { margin-top: 12px; border: 1px solid var(--bad); background: var(--panel-2); border-radius: var(--radius-input); padding: 10px 14px; font-size: 14px; }
+      .draft-heldout p { margin: 4px 0; }
       .draft-list-note {
         margin-top: 14px; background: var(--gold-soft); border: 1px solid var(--gold); color: var(--gold-strong);
         border-radius: var(--radius-input); padding: 9px 13px; font-weight: 700; font-size: 14px;
@@ -675,6 +695,11 @@
         .bd-row .bk { grid-area: bk; }
         .bd-row .bv { grid-area: bv; white-space: normal; text-align: right; font-size: 13px; }
         .bd-bar { grid-area: bar; height: 7px; }
+        /* matchup data rows wrap instead of squeezing off the card */
+        .mu-row { flex-wrap: wrap; row-gap: 2px; }
+        .mu-row .mu-wr { margin-left: 0; }
+        .mu-src { font-size: 10px; }
+        .draft-vs { padding: 10px 0 2px; }
       }
       @media (max-width: 380px) {
         .score-bar { min-width: 52px; }
@@ -713,7 +738,12 @@
         </div>
         <p class="draft-honesty">Counter and synergy numbers come from <b>this tool's illustrative model</b> (or your
         CSV-imported numbers below) — not live Riot data. Synergy is model-based, derived from archetypes and damage
-        profiles. <b>Read-only:</b> this mode only recommends — it never picks, hovers, or locks anything in your game client.</p>
+        profiles. <b>The data behind every recommendation is printed on the card:</b> each locked enemy contributes
+        one matchup number per candidate, labelled with where it came from — your CSV, a curated kit interaction
+        (hard CC that cancels a channel, say), the same-role matchup model, or the cross-role model — and the weight
+        its role correspondence gave it. <b>One bad number is enough:</b> any single locked matchup under 45% at a
+        real interaction weight drags the Counter score down and bars the pick from the Top 3, as does a weighted
+        average under 47% — for every champion, not just a hardcoded few. <b>Read-only:</b> this mode only recommends — it never picks, hovers, or locks anything in your game client.</p>
         <div class="draft-body" id="draftBody" hidden>
           <div class="draft-role-row">
             <div class="field">
@@ -917,6 +947,11 @@
           <p><code>champion,enemy,winrate</code> — one row per matchup, e.g. <code>Rammus,Master Yi,61.2</code>.
           Names can be champion IDs (<code>MasterYi</code>) or display names (<code>Master Yi</code>).
           Rows you import replace the modeled matchup in both directions; matchups you don't list keep the model values.</p>
+          <p><b>Cross-role rows count too.</b> The enemy doesn't have to play your role: paste
+          <code>Nunu,Syndra,44.0</code> while Jungle is selected and Live Draft scores jungle Nunu against an
+          enemy Syndra with your 44.0% — and because one locked matchup that low bars a pick from the Top 3,
+          that single row is enough to drop the suggestion. Your numbers always outrank the model and the
+          curated kit interactions, and each draft card labels which source every number came from.</p>
           <textarea id="csvText" placeholder="champion,enemy,winrate&#10;Rammus,Master Yi,61.2&#10;Rammus,Karthus,43.8" aria-label="Matchup CSV"></textarea>
           <div class="btn-row">
             <button class="btn" id="csvApply" type="button">Apply to this role</button>
@@ -1032,6 +1067,17 @@
           if (m.has(rk)) return 100 - m.get(rk);
         }
         return modelWR(role, a, b);
+      }
+      // CSV-imported value for a pair, or null when the import doesn't cover it.
+      // Lets the draft layer honour "your numbers override" before falling back
+      // to curated interactions or the model.
+      function importedWR(role, a, b) {
+        const m = imports[role];
+        if (!m) return null;
+        const k = a + "|" + b, rk = b + "|" + a;
+        if (m.has(k)) return m.get(k);
+        if (m.has(rk)) return 100 - m.get(rk);
+        return null;
       }
 
       let statCache = {};
@@ -1402,6 +1448,11 @@
           + '<div class="big-stat"><div class="v">±' + fmt(s.spread) + '</div><div class="k">Spread</div><div class="d">how swingy the matchups are</div></div>'
           + '<div class="big-stat"><div class="v">' + fmt(s.risk, 0) + '%</div><div class="k">Counter risk</div><div class="d">chance of a sub-47% matchup</div></div>'
           + "</div>"
+          + (typeof draft !== "undefined" && draft.active && draft.enemy.length
+            ? '<div class="draft-vs"><h3>Against the locked enemies</h3>'
+              + '<p class="cap">The exact matchup number Live Draft is using for ' + esc(c.name) + ' against each locked enemy, where it came from, and the weight its role carries. One number under 45% here is enough to bar this pick from the Top 3.</p>'
+              + matchupBreakdownHTML(draftMatchupEntries(state.role, id)) + "</div>"
+            : "")
           + (state.role === "jungle" ? clearBannerHTML(id) : "")
           + '<a class="ugg-link" href="' + uggUrlFor(id, state.role) + '" target="_blank" rel="noopener noreferrer">Recommended build on U.GG — ' + esc(c.name) + " " + ROLE_LABEL[state.role] + ' <span class="ext" aria-hidden="true">↗</span></a>'
           + '<div class="ugg-note">Runes, summoner spells, skill order, and starting &amp; core items for this role on the current patch — opens on U.GG in a new tab.</div>'
@@ -1451,68 +1502,203 @@
       const CC_BY_ARCH = { TK: 3, CT: 3, WD: 3, JG: 2, CM: 2, BM: 2, EN: 2, DV: 1, PK: 1, AS: 1, DU: 1, MM: 1 };
       function draftUsedSet() { return new Set([...draft.ally, ...draft.enemy, ...draft.bans]); }
 
-      function draftCounter(role, id) {
-        if (!draft.enemy.length) return { score: 50, wr: null, counterpart: null };
-        const myArch = DATA.champs[id].arch;
-        let wsum = 0, vsum = 0, counterpart = null;
-        for (const e of draft.enemy) {
-          let v, w;
-          if (DATA.pools[role][e]) {
-            // Enemy who can play my role: the lane counterpart — real model matchup, heavy weight.
-            v = wr(role, id, e); w = 3;
-            if (!counterpart || v < counterpart.v) counterpart = { e, v };
-          } else {
-            // Other locked enemies: archetype affinity from the same model, low weight; neutral 50 when the model has no affinity.
-            v = 50 + aff(myArch, DATA.champs[e].arch) * 1.5; w = 1;
-          }
-          wsum += w; vsum += w * v;
+      /* ---------- Draft interaction & role-correspondence layer ----------
+         Two data-driven tables drive how locked picks move a candidate:
+
+         CROSS_INTERACTIONS — curated kit interactions keyed "candidate|enemy",
+         valid whatever role the enemy was locked into. The archetype model
+         cannot see mechanics like hard CC cancelling a channel, so these pairs
+         carry an explicit model win rate plus the reason in plain words. They
+         are consulted after any CSV import for the pair and before the
+         matchup model, and they score at counterpart weight (3). Add a
+         row to teach the tool a new interaction — no other code changes.
+         Every other pair, same-role or cross-role, gets its number from the
+         matchup model (see draftMatchupEntries / crossRoleWR below), and
+         every number used is printed on the draft card with its source.
+
+         ROLE_CORRESPONDENCE — how much a pick in one role should move the
+         score of a pick in another, used by both draft terms: enemy picks
+         feed Counter, ally picks feed Synergy. Same role is the lane
+         counterpart at 3; cross-role pairs reflect how often and how directly
+         those roles actually meet in a game (Jungle↔Mid fight the 2v2 and the
+         river, ADC↔Support share a lane, Top↔ADC mostly meet in late
+         teamfights). Tune the numbers here to re-weight drafts. */
+      const CROSS_INTERACTIONS = {
+        "Nunu|Vi": { wr: 42, why: "interrupt Nunu's channels", note: "reliable hard CC cancels his channelled ultimate and stops the snowball" },
+        "Nunu|Syndra": { wr: 42, why: "interrupt Nunu's channels", note: "Scatter the Weak cancels his channelled ultimate and stops the snowball" },
+      };
+      const ROLE_CORRESPONDENCE = {
+        top:     { top: 3, jungle: 1.5, mid: 1.0, adc: 0.75, support: 1.0 },
+        jungle:  { top: 1.5, jungle: 3, mid: 2.0, adc: 1.25, support: 1.5 },
+        mid:     { top: 1.0, jungle: 2.0, mid: 3, adc: 1.0, support: 1.5 },
+        adc:     { top: 0.75, jungle: 1.25, mid: 1.0, adc: 3, support: 2.5 },
+        support: { top: 1.0, jungle: 1.5, mid: 1.5, adc: 2.5, support: 3 },
+      };
+      function roleCorrWeight(myRole, otherRole) {
+        const row = ROLE_CORRESPONDENCE[myRole];
+        return (row && row[otherRole] != null) ? row[otherRole] : 1;
+      }
+      function corrTxt(w) { return String(Math.round(w * 100) / 100); }
+      // The role a locked enemy is scored as playing against `role`: a champion
+      // who can play my role is my lane counterpart; anyone else is scored in
+      // the first of their roles that isn't mine.
+      function enemyDraftRole(e, role) {
+        if (DATA.pools[role][e]) return role;
+        const rs = DATA.champs[e].roles;
+        return rs.find((r) => r !== role) || rs[0];
+      }
+      // An ally fills a different slot from mine when they can; only a
+      // single-role ally who shares my role is scored as same-role.
+      function allyDraftRole(a, role) {
+        const rs = DATA.champs[a].roles;
+        return rs.find((r) => r !== role) || role;
+      }
+      // Builds e.g. "Hard counter: Vi and Syndra both can interrupt Nunu's channels."
+      function hardCounterText(hard) {
+        const groups = [];
+        for (const h of hard) {
+          let g = groups.find((x) => x.why === h.why);
+          if (!g) { g = { why: h.why, names: [], notes: [] }; groups.push(g); }
+          g.names.push(name(h.e));
+          if (!g.notes.includes(h.note)) g.notes.push(h.note);
         }
-        const wwr = vsum / wsum;
-        return { score: Math.max(2, Math.min(98, Math.round(50 + (wwr - 50) * 4))), wr: wwr, counterpart };
+        return groups.map((g) => {
+          const names = g.names.length > 1
+            ? g.names.slice(0, -1).join(", ") + " and " + g.names[g.names.length - 1]
+            : g.names[0];
+          const both = g.names.length === 2 ? " both" : g.names.length > 2 ? " all" : "";
+          let t = "Hard counter: " + names + both + " can " + g.why;
+          if (g.notes.length === 1) t += " — " + g.notes[0];
+          return t + ".";
+        });
+      }
+
+      /* The matchup number for a candidate against an enemy locked into a
+         DIFFERENT role. Built from the same ingredients as the same-role
+         model — each champion's strength in the role they are actually
+         playing, archetype affinity, and the deterministic pair noise — so
+         every cross-role pair has a specific, inspectable number instead of
+         the old silent flat 50.0 whenever the archetypes had no affinity. */
+      function crossRoleWR(role, id, e, eRole) {
+        const pa = DATA.pools[role][id], pb = (DATA.pools[eRole] || {})[e];
+        if (!pa || !pb) return 50;
+        const lo = id < e ? id : e, hi = id < e ? e : id;
+        let n = fnv("x|" + role + "|" + eRole + "|" + lo + "|" + hi) * 2 - 1;
+        if (id === hi) n = -n;
+        const va = (DATA.champs[id].vol + DATA.champs[e].vol) / 2;
+        const v = 50 + (pa.power - pb.power) * 0.55
+          + aff(DATA.champs[id].arch, DATA.champs[e].arch) + n * 3.4 * va;
+        return Math.max(36, Math.min(64, v));
+      }
+      /* One entry per locked enemy: the exact number the Counter score used,
+         where it came from, and the weight it carried. Source precedence is
+         the same for every champion pair: your CSV first, then a curated kit
+         interaction, then the matchup model (same-role or cross-role). The
+         draft cards print these rows, so the data behind a recommendation
+         is visible instead of hidden inside an average. */
+      function draftMatchupEntries(role, id) {
+        return draft.enemy.map((e) => {
+          const inPool = !!DATA.pools[role][e];
+          const eRole = enemyDraftRole(e, role);
+          const imp = importedWR(role, id, e);
+          const inter = CROSS_INTERACTIONS[id + "|" + e];
+          if (imp != null) return { e, eRole, v: imp, w: inPool ? 3 : roleCorrWeight(role, eRole), src: "csv", srcLabel: "Your CSV", inter: null };
+          if (inter) return { e, eRole, v: inter.wr, w: 3, src: "kit", srcLabel: "Kit interaction", inter };
+          if (inPool) return { e, eRole, v: wr(role, id, e), w: 3, src: "model", srcLabel: "Matchup model", inter: null };
+          return { e, eRole, v: crossRoleWR(role, id, e, eRole), w: roleCorrWeight(role, eRole), src: "xmodel", srcLabel: "Cross-role model", inter: null };
+        });
+      }
+      function matchupBreakdownHTML(entries) {
+        if (!entries || !entries.length) return "";
+        return '<span class="mu-list"><span class="mu-head">Matchup data behind this score</span>'
+          + entries.map((en) =>
+            '<span class="mu-row">' + icon(en.e)
+            + '<span class="mu-nm">vs ' + esc(name(en.e)) + "</span>"
+            + '<span class="mu-role">' + ROLE_LABEL[en.eRole] + " · ×" + corrTxt(en.w) + " weight</span>"
+            + '<span class="mu-src ' + en.src + '">' + esc(en.srcLabel) + "</span>"
+            + '<span class="mu-wr ' + wrClass(en.v) + '">' + fmt(en.v) + "%</span></span>").join("")
+          + "</span>";
+      }
+
+      function draftCounter(role, id) {
+        if (!draft.enemy.length) return { score: 50, wr: null, counterpart: null, hard: [], corrNote: null, entries: [], worst: null };
+        const entries = draftMatchupEntries(role, id);
+        const hard = entries.filter((en) => en.inter).map((en) => ({ e: en.e, why: en.inter.why, note: en.inter.note }));
+        let wsum = 0, vsum = 0, counterpart = null, corrNote = null, worst = null;
+        for (const en of entries) {
+          wsum += en.w; vsum += en.w * en.v;
+          if (!worst || en.v < worst.v) worst = en;
+          if (DATA.pools[role][en.e] && (!counterpart || en.v < counterpart.v)) counterpart = { e: en.e, v: en.v };
+          // Strongest cross-role correspondence that actually moved this score —
+          // cited on the card so the weighting is visible, not silent.
+          if (en.src === "xmodel" && en.w >= 2 && Math.abs(en.v - 50) >= 2) {
+            const pull = en.w * Math.abs(en.v - 50);
+            if (!corrNote || pull > corrNote.pull) corrNote = { e: en.e, eRole: en.eRole, w: en.w, pull };
+          }
+        }
+        let wwr = vsum / wsum;
+        // Worst-matchup drag: one genuinely bad locked matchup pulls the
+        // whole Counter number down instead of being averaged away by the
+        // other locked picks — a candidate who only loses to a single enemy
+        // still drops, whatever the rest of the draft looks like.
+        if (worst && worst.v < 50) wwr = wwr * 0.75 + worst.v * 0.25;
+        // Curated hard interactions stack: each one past the first deepens the
+        // penalty instead of being averaged away by the others.
+        if (hard.length > 1) wwr -= 2 * (hard.length - 1);
+        return { score: Math.max(2, Math.min(98, Math.round(50 + (wwr - 50) * 4))), wr: wwr, counterpart, hard, corrNote, entries, worst };
       }
 
       function draftSynergy(role, id) {
         const allies = draft.ally, c = DATA.champs[id];
-        if (!allies.length) return { score: 50, parts: [] };
+        if (!allies.length) return { score: 50, parts: [], corrAlly: null };
         let score = 50;
         const parts = [];
         const allyNames = allies.slice(0, 2).map((a) => name(a)).join(" + ");
         // Damage-profile balance
+        // Ally contributions are weighted by role correspondence: the support
+        // sharing your lane moves an ADC's synergy more than a distant top laner.
         let ad = 0, ap = 0;
-        for (const a of allies) { const d = dmgOf(a); if (d === "AD") ad++; else if (d === "AP") ap++; else { ad += 0.5; ap += 0.5; } }
+        for (const a of allies) { const cw = roleCorrWeight(role, allyDraftRole(a, role)); const d = dmgOf(a); if (d === "AD") ad += cw; else if (d === "AP") ap += cw; else { ad += 0.5 * cw; ap += 0.5 * cw; } }
         const cd = dmgOf(id);
-        if (ad >= 2 && ap === 0) {
+        if (ad >= 2 && ap < 0.01) {
           if (cd === "AP") { score += 12; parts.push({ pts: 12, text: "Brings the AP your all-AD comp is missing" }); }
           else if (cd === "AD") { score -= 6; parts.push({ pts: -6, text: "Stacks more AD onto an all-AD comp" }); }
-        } else if (ap >= 2 && ad === 0) {
+        } else if (ap >= 2 && ad < 0.01) {
           if (cd === "AD") { score += 12; parts.push({ pts: 12, text: "Brings the AD your all-AP comp is missing" }); }
           else if (cd === "AP") { score -= 6; parts.push({ pts: -6, text: "Stacks more AP onto an all-AP comp" }); }
-        } else if (ad !== ap) {
+        } else if (Math.abs(ad - ap) > 0.01) {
           const minority = ad < ap ? "AD" : "AP";
           if (cd === minority) { score += 5; parts.push({ pts: 5, text: "Balances your damage with the " + minority + " your comp is short on" }); }
         }
         // Frontline gap
-        const allyFront = allies.reduce((s, a) => s + (FRONTLINE_ARCH[DATA.champs[a].arch] || 0), 0);
+        const allyFront = allies.reduce((s, a) => s + roleCorrWeight(role, allyDraftRole(a, role)) * (FRONTLINE_ARCH[DATA.champs[a].arch] || 0), 0);
         const myFront = FRONTLINE_ARCH[c.arch] || 0;
         if (allyFront < 1) {
           if (myFront >= 1) { score += 10; parts.push({ pts: 10, text: "Adds the frontline your " + allyNames + " lack" }); }
           else if (myFront === 0 && (c.arch === "MM" || c.arch === "EN" || c.arch === "PK")) { score -= 4; parts.push({ pts: -4, text: "Leaves your comp with no frontline" }); }
         } else if (myFront >= 1) { score += 2; parts.push({ pts: 2, text: "Reinforces your frontline alongside " + allyNames }); }
         // Crowd control
-        const allyCC = allies.reduce((s, a) => s + (CC_BY_ARCH[DATA.champs[a].arch] || 0), 0);
+        const allyCC = allies.reduce((s, a) => s + roleCorrWeight(role, allyDraftRole(a, role)) * (CC_BY_ARCH[DATA.champs[a].arch] || 0), 0);
         const myCC = CC_BY_ARCH[c.arch] || 0;
         if (allyCC <= 3 && myCC >= 2) { score += 7; parts.push({ pts: 7, text: "Adds crowd control your comp is short on" }); }
         else if (myCC >= 3) { score += 3; parts.push({ pts: 3, text: "Brings heavy crowd control" }); }
         // Engage / peel / poke coherence
+        // Pairwise fits scale with how closely that ally's role plays with mine.
+        const pairPts = (base, a) => Math.round(base * roleCorrWeight(role, allyDraftRole(a, role)));
         const mmAlly = allies.find((a) => DATA.champs[a].arch === "MM");
-        if (mmAlly && (c.arch === "EN" || c.arch === "WD" || c.arch === "TK")) { score += 6; parts.push({ pts: 6, text: "Peel and protection for your " + name(mmAlly) }); }
+        if (mmAlly && (c.arch === "EN" || c.arch === "WD" || c.arch === "TK")) { const p = pairPts(6, mmAlly); score += p; parts.push({ pts: p, text: "Peel and protection for your " + name(mmAlly) }); }
         const diveAlly = allies.find((a) => ["DV", "AS", "DU"].includes(DATA.champs[a].arch));
-        if (diveAlly && ["DV", "CT", "TK", "AS"].includes(c.arch)) { score += 6; parts.push({ pts: 6, text: "Dives in alongside your " + name(diveAlly) }); }
+        if (diveAlly && ["DV", "CT", "TK", "AS"].includes(c.arch)) { const p = pairPts(6, diveAlly); score += p; parts.push({ pts: p, text: "Dives in alongside your " + name(diveAlly) }); }
         const pokeAlly = allies.find((a) => DATA.champs[a].arch === "PK");
-        if (pokeAlly && (c.arch === "PK" || c.arch === "CM")) { score += 5; parts.push({ pts: 5, text: "Extends the poke of your " + name(pokeAlly) }); }
+        if (pokeAlly && (c.arch === "PK" || c.arch === "CM")) { const p = pairPts(5, pokeAlly); score += p; parts.push({ pts: p, text: "Extends the poke of your " + name(pokeAlly) }); }
         const enAlly = allies.find((a) => DATA.champs[a].arch === "EN");
-        if (enAlly && (c.arch === "MM" || c.arch === "DU")) { score += 4; parts.push({ pts: 4, text: "A carry for your " + name(enAlly) + " to empower" }); }
-        return { score: Math.max(5, Math.min(97, Math.round(score))), parts };
+        if (enAlly && (c.arch === "MM" || c.arch === "DU")) { const p = pairPts(4, enAlly); score += p; parts.push({ pts: p, text: "A carry for your " + name(enAlly) + " to empower" }); }
+        let corrAlly = null;
+        for (const a of allies) {
+          const ar = allyDraftRole(a, role), w = roleCorrWeight(role, ar);
+          if (w >= 2 && (!corrAlly || w > corrAlly.w)) corrAlly = { a, aRole: ar, w };
+        }
+        return { score: Math.max(5, Math.min(97, Math.round(score))), parts, corrAlly };
       }
 
       let draftCache = { sig: "", map: {} };
@@ -1533,20 +1719,41 @@
         else if (draft.ally.length) { wC = 0.10; wS = 0.35; wB = 0.55; }
         else { wC = 0; wS = 0; wB = 1; }
         const total = Math.max(1, Math.min(99, Math.round(wC * counter.score + wS * syn.score + wB * blind.score)));
+        // Demotion rule — data-driven, identical for every champion: a
+        // curated hard interaction, a weighted counter win rate under the
+        // tool's own 47% counter line, OR any single locked matchup under
+        // 45% (from your CSV or a kit interaction at any weight; from the
+        // model when that enemy's role genuinely interacts with yours)
+        // bars the pick from the Top 3 no matter how safe it is blind.
+        // One bad matchup in the data is enough — it doesn't need company.
+        const worstBlocks = !!(counter.worst && counter.worst.v < 45
+          && (counter.worst.src === "csv" || counter.worst.src === "kit" || counter.worst.w >= 1.5));
+        const blocked = counter.hard.length > 0 || (counter.wr != null && counter.wr < 47) || worstBlocks;
         const reasons = [];
+        for (const t of hardCounterText(counter.hard)) reasons.push({ pts: 100, text: t });
         if (counter.counterpart) {
           reasons.push({ pts: Math.abs(counter.counterpart.v - 50) * 2 + (counterpartLocked ? 6 : 0), text: "Model " + fmt(counter.counterpart.v) + "% vs their " + name(counter.counterpart.e) });
-        } else if (draft.enemy.length && counter.wr != null && (counter.wr >= 53 || counter.wr <= 47)) {
+        }
+        if (counter.worst && counter.worst.v < 47 && (!counter.counterpart || counter.counterpart.e !== counter.worst.e)) {
+          reasons.push({ pts: (47 - counter.worst.v) * 3 + 6, text: "Matchup data: " + fmt(counter.worst.v) + "% vs their " + name(counter.worst.e) + " (" + ROLE_LABEL[counter.worst.eRole] + " · " + counter.worst.srcLabel + ") — one bad locked matchup drags this pick down" });
+        }
+        if (!counter.counterpart && draft.enemy.length && counter.wr != null && (counter.wr >= 53 || counter.wr <= 47)) {
           reasons.push({ pts: Math.abs(counter.wr - 50) * 2, text: "Model " + fmt(counter.wr) + "% across their locked picks" });
         }
         for (const p of syn.parts) if (p.pts >= 4) reasons.push(p);
+        if (counter.corrNote) {
+          reasons.push({ pts: 12, text: "Role correspondence: their " + ROLE_LABEL[counter.corrNote.eRole] + " (" + name(counter.corrNote.e) + ") weighs " + corrTxt(counter.corrNote.w) + "× against a " + ROLE_LABEL[role] + " pick" });
+        }
+        if (syn.corrAlly && Math.abs(syn.score - 50) >= 6) {
+          reasons.push({ pts: 10, text: "Role correspondence: your " + ROLE_LABEL[syn.corrAlly.aRole] + " (" + name(syn.corrAlly.a) + ") plays closely with " + ROLE_LABEL[role] + " — synergy weighs " + corrTxt(syn.corrAlly.w) + "×" });
+        }
         if (!counterpartLocked && blind.score >= 60) {
           reasons.push({ pts: 8, text: "Safe blind — " + blind.score + " CtrlWard score with only ±" + fmt(blind.spread) + " spread" });
         }
         reasons.sort((a, b) => b.pts - a.pts);
         const picked = reasons.slice(0, 2).map((r) => r.text);
         if (!picked.length) picked.push("Balanced fit — " + fmt(blind.exp) + "% expected win rate blind, ±" + fmt(blind.spread) + " spread");
-        const out = { total, counter, synergy: syn, blind, counterpartLocked, weights: { wC, wS, wB }, reasons: picked };
+        const out = { total, counter, synergy: syn, blind, counterpartLocked, blocked, weights: { wC, wS, wB }, reasons: picked };
         draftCache.map[id] = out;
         return out;
       }
@@ -1555,7 +1762,9 @@
         return Object.keys(DATA.pools[state.role])
           .filter((id) => !used.has(id))
           .map((id) => ({ id, d: draftScore(state.role, id) }))
-          .sort((a, b) => b.d.total - a.d.total || b.d.blind.score - a.d.blind.score);
+          // Blocked picks (curated hard interaction, or weighted counter WR
+          // under the 47% line) rank below every unblocked pick.
+          .sort((a, b) => (a.d.blocked ? 1 : 0) - (b.d.blocked ? 1 : 0) || b.d.total - a.d.total || b.d.blind.score - a.d.blind.score);
       }
 
       function renderDraftChips(group, ids) {
@@ -1638,7 +1847,14 @@
         renderDraftChips("Ban", draft.bans);
         renderDraftGrid();
         const recs = $("#draftRecs");
-        const top = draftCandidates().slice(0, 3);
+        const ranked = draftCandidates();
+        const top = ranked.slice(0, 3);
+        // Picks barred from the Top 3 by the demotion rule: any pick carrying a
+        // curated hard interaction, plus any blocked pick whose raw draft score
+        // earned a slot — named below the cards, with the reason, so the
+        // demotion is visible rather than silent.
+        const byScore = ranked.slice().sort((a, b) => b.d.total - a.d.total || b.d.blind.score - a.d.blind.score);
+        const heldOut = byScore.filter((c, i) => c.d.blocked && !top.includes(c) && (i < 3 || c.d.counter.hard.length > 0 || (c.d.counter.worst && c.d.counter.worst.v < 45))).slice(0, 2);
         const w = top.length ? top[0].d.weights : { wC: 0, wS: 0, wB: 1 };
         $("#draftWeights").textContent = !draft.ally.length && !draft.enemy.length
           ? "No picks yet — ranked by blind safety until picks come in"
@@ -1663,8 +1879,13 @@
             + '<span class="bd-row"><span class="bk">Synergy</span><span class="bd-bar"><i style="width:' + d.synergy.score + '%"></i></span><span class="bv">' + d.synergy.score + " · model-based</span></span>"
             + '<span class="bd-row"><span class="bk">Blind safety</span><span class="bd-bar"><i style="width:' + d.blind.score + '%"></i></span><span class="bv">' + d.blind.score + " · " + fmt(d.blind.exp) + "% exp. WR</span></span>"
             + '<span class="draft-reasons" style="display:block">' + d.reasons.map((r) => '<span style="display:block" class="dr-li">▸ ' + esc(r) + "</span>").join("") + "</span>"
+            + matchupBreakdownHTML(d.counter.entries)
             + "</button>";
         }).join("") + "</div>";
+        if (heldOut.length) {
+          recs.innerHTML += '<div class="draft-heldout">' + heldOut.map((c) =>
+            "<p><b>Blocked from the Top 3 — " + esc(name(c.id)) + ":</b> " + c.d.reasons.map((r) => esc(r)).join(" ") + "</p>").join("") + "</div>";
+        }
         recs.querySelectorAll("[data-draft-pick]").forEach((b) =>
           b.addEventListener("click", () => selectChamp(b.dataset.draftPick)));
       }
@@ -1822,16 +2043,22 @@
         const status = $("#csvStatus");
         const lines = $("#csvText").value.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
         const map = new Map(imports[state.role] || []);
-        let applied = 0; const skipped = [];
+        let applied = 0, cross = 0; const skipped = [];
         for (const line of lines) {
           if (/^champion\s*,/i.test(line)) continue;
           const parts = line.split(",").map((p) => p.trim());
           if (parts.length < 3) { skipped.push(line); continue; }
           const a = resolveChamp(parts[0]), b = resolveChamp(parts[1]);
           const v = parseFloat(parts[2]);
-          if (!a || !b || a === b || isNaN(v) || !DATA.pools[state.role][a] || !DATA.pools[state.role][b]) {
+          // At least one side must play this role; the other can be any
+          // champion. A cross-role row (jungle Nunu vs mid Syndra, say) is
+          // stored as given and found again by Live Draft's reverse lookup,
+          // so a user's real number for a cross-role pair is no longer
+          // silently skipped the way it used to be.
+          if (!a || !b || a === b || isNaN(v) || (!DATA.pools[state.role][a] && !DATA.pools[state.role][b])) {
             skipped.push(line); continue;
           }
+          if (!DATA.pools[state.role][a] || !DATA.pools[state.role][b]) cross++;
           map.set(a + "|" + b, Math.max(0, Math.min(100, v)));
           applied++;
         }
@@ -1842,8 +2069,9 @@
         status.className = "import-status" + (skipped.length ? " err" : "");
         status.textContent = applied
           ? "Applied " + applied + " imported matchup(s) to " + ROLE_LABEL[state.role] + "."
+            + (cross ? " " + cross + " of them cross-role — those drive Live Draft scores against enemies locked in other roles." : "")
             + (skipped.length ? " Skipped " + skipped.length + " row(s) I couldn't read: " + skipped.slice(0, 3).join(" · ") : "")
-          : "No rows applied — check the format: champion,enemy,winrate with both champions in this role.";
+          : "No rows applied — check the format: champion,enemy,winrate with at least one champion in this role.";
       }
       function downloadTemplate() {
         const pool = DATA.pools[state.role];
