@@ -461,6 +461,13 @@
       .draft-vs h3 { font-size: 18px; margin-bottom: 4px; }
       .draft-vs .cap { color: var(--ink-soft); font-size: 14px; margin: 0 0 8px; }
       .draft-vs .mu-list { margin-top: 0; padding-top: 0; border-top: 0; }
+      /* ---------- early-game blurb (vs the locked lane opponent) ---------- */
+      .draft-early { display: block; margin-top: 10px; font-size: 13.5px; line-height: 1.45; color: var(--ink-soft); }
+      .draft-early b { color: var(--gold-strong); }
+      .early-game { margin-top: 12px; background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-input); padding: 11px 13px; }
+      .early-game .eg-k { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold-strong); }
+      .early-game p { margin: 5px 0 0; font-size: 15px; }
+      .early-game .eg-cap { font-size: 12.5px; color: var(--ink-soft); }
       .draft-empty { margin-top: 12px; color: var(--ink-soft); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-input); padding: 12px 14px; }
       .draft-heldout { margin-top: 12px; border: 1px solid var(--bad); background: var(--panel-2); border-radius: var(--radius-input); padding: 10px 14px; font-size: 14px; }
       .draft-heldout p { margin: 4px 0; }
@@ -759,7 +766,10 @@
         its role correspondence gave it. <b>Expected roles are optional context:</b> under each team you can tell the
         draft where a locked flex pick is actually going, and that role — not the auto-guess shown in the selector —
         drives its correspondence weight, its cross-role number, and whether it counts as your locked lane opponent.
-        The breakdown on each card marks any role you set. <b>One bad number is enough:</b> any single locked matchup under 45% at a
+        The breakdown on each card marks any role you set. <b>Early-game sketch:</b> once your lane opponent is locked,
+        each Top card and the champion detail view add a short note on how the early game should play against them —
+        a model sketch generated from that matchup number and both champions' archetypes, not matchup VODs.
+        <b>One bad number is enough:</b> any single locked matchup under 45% at a
         real interaction weight drags the Counter score down and bars the pick from the Top 3, as does a weighted
         average under 47% — for every champion, not just a hardcoded few. <b>Read-only:</b> this mode only recommends — it never picks, hovers, or locks anything in your game client.</p>
         <div class="draft-body" id="draftBody" hidden>
@@ -1471,7 +1481,8 @@
           + (typeof draft !== "undefined" && draft.active && draft.enemy.length
             ? '<div class="draft-vs"><h3>Against the locked enemies</h3>'
               + '<p class="cap">The exact matchup number Live Draft is using for ' + esc(c.name) + ' against each locked enemy, where it came from, and the weight its role carries. One number under 45% here is enough to bar this pick from the Top 3.</p>'
-              + matchupBreakdownHTML(draftMatchupEntries(state.role, id)) + "</div>"
+              + matchupBreakdownHTML(draftMatchupEntries(state.role, id))
+              + earlyGameDetailHTML(state.role, id) + "</div>"
             : "")
           + (state.role === "jungle" ? clearBannerHTML(id) : "")
           + '<a class="ugg-link" href="' + uggUrlFor(id, state.role) + '" target="_blank" rel="noopener noreferrer">Recommended build on U.GG — ' + esc(c.name) + " " + ROLE_LABEL[state.role] + ' <span class="ext" aria-hidden="true">↗</span></a>'
@@ -1664,6 +1675,98 @@
             + '<span class="mu-src ' + en.src + '">' + esc(en.srcLabel) + "</span>"
             + '<span class="mu-wr ' + wrClass(en.v) + '">' + fmt(en.v) + "%</span></span>").join("")
           + "</span>";
+      }
+
+      /* ---------- Early-game blurb ----------
+         A short "how should the early game play" note for a candidate
+         against their locked lane opponent (the enemy whose expected role
+         equals mine). It is generated, not curated per champion: the band
+         comes from the exact matchup number the Counter score used, the
+         plan from the candidate's archetype, the warning from the enemy's
+         archetype, plus a pathing line for jungle and the curated kit
+         note when the pair has one. Same inputs, same blurb, for every
+         champion — and it is labelled a model sketch wherever it shows. */
+      const EARLY_PLAN = {
+        AS: "look for short, decisive burst windows: chip with your safest spell, then commit only when their key cooldown is down — long early fights are not yours",
+        DV: "play around your engage cooldown: short, committed bursts while it is up and patience while it is down — don't bleed health walking up",
+        DU: "extended trades are your friend: take the long fight when your cooldowns are live, and let the threat of it control space",
+        JG: "you win long, stand-your-ground fights but you are easy to kite and gank early — fight inside your wave or near your tower, not in the open",
+        TK: "absorb the early pressure and farm: your job is reaching your first item and the teamfight phase intact, not winning level 1–5 trades",
+        CM: "control the wave first and poke second: shove on your timers, keep your distance, and let your range do the trading",
+        BM: "trade in full rotations only: land the combo, then give ground while everything is on cooldown",
+        PK: "chip them from maximum range and keep the wave where you want it — you win this one on health bars, not all-ins",
+        EN: "trade through your shields and heals: short exchanges you can sustain through, and never let it become a fight to the death",
+        MM: "farm first, trade second: short auto trades behind your minion wave, and save your mobility for their commit",
+        CT: "threaten from fog and brush: the possibility of your pick or engage is what zones them — throw it when they step up for farm",
+        WD: "play reactive and patient: hold your disengage for their commit and punish the engage — don't start fights yourself"
+      };
+      const EARLY_PLAN_SHORT = {
+        AS: "short burst windows only — don't take long fights",
+        DV: "commit on your engage cooldown; patience while it's down",
+        DU: "take extended trades — your long fights win",
+        JG: "fight in your wave — you're easy to kite and gank",
+        TK: "absorb and farm; your game starts later, not at level 3",
+        CM: "control the wave, poke from range",
+        BM: "trade in full combos, then back off on cooldowns",
+        PK: "chip from max range; win it on health bars",
+        EN: "short trades through your shields and heals",
+        MM: "farm first; short trades behind your wave",
+        CT: "threaten picks from fog and brush",
+        WD: "hold your disengage for their commit; punish the engage"
+      };
+      const EARLY_RESPECT = {
+        AS: "their burst combo — a trade at half health can become a kill",
+        DV: "their all-in engage — one step too far up is a full combo",
+        DU: "extended trades — take short ones and disengage",
+        JG: "long stand-and-fight brawls and their early bulk",
+        TK: "burning your damage into their early bulk — it rarely sticks",
+        CM: "their wave control — fighting inside a big enemy wave loses trades",
+        BM: "their full-combo burst window, especially right after a level spike",
+        PK: "the poke tax — bleeding health before you can close the distance",
+        EN: "long trades — their sustain quietly wins them",
+        MM: "letting fights drag — their sustained damage wins long exchanges",
+        CT: "the pick from fog or brush — keep minions or vision between you",
+        WD: "their disengage — a baited engage turns into their trade"
+      };
+      function earlyBand(v) {
+        if (v >= 54) return "You hold the early edge in this one";
+        if (v >= 51) return "A slight early edge is yours";
+        if (v >= 48) return "This starts as an even early game";
+        if (v >= 45) return "This is an uphill early game";
+        return "This is a survival early game";
+      }
+      // The locked lane opponent for this candidate: among the enemies whose
+      // expected role is mine, the hardest one (lowest matchup number).
+      function counterpartEntry(role, id) {
+        const es = draftMatchupEntries(role, id).filter((en) => en.eRole === role);
+        if (!es.length) return null;
+        return es.reduce((a, b) => (b.v < a.v ? b : a));
+      }
+      function earlyGameBlurb(role, id, en) {
+        const c = DATA.champs[id], ec = DATA.champs[en.e];
+        let t = earlyBand(en.v) + " — the model rates " + name(id) + " at " + fmt(en.v) + "% into " + name(en.e) + ". ";
+        t += EARLY_PLAN[c.arch].charAt(0).toUpperCase() + EARLY_PLAN[c.arch].slice(1) + ". ";
+        t += "Respect " + EARLY_RESPECT[ec.arch] + ".";
+        if (role === "jungle") {
+          t += en.v >= 52
+            ? " Contest the first scuttle on your clear timer — this is a matchup you can meet in the river."
+            : en.v >= 48
+              ? " Mirror their pathing early and take the scuttle they can't contest rather than forcing a coin-flip fight."
+              : " Path away from them on the first clear and trade cross-map — the early skirmish is where this pick is weakest.";
+        }
+        if (en.inter) t += " Kit note: " + name(en.e) + "'s " + en.inter.note + " — play your early fights around it.";
+        return t;
+      }
+      function earlyGameShort(role, id, en) {
+        const band = en.v >= 54 ? "early edge yours" : en.v >= 51 ? "slight early edge" : en.v >= 48 ? "even early game" : en.v >= 45 ? "uphill early game" : "survival early game";
+        return "<b>Early game vs " + esc(name(en.e)) + ":</b> " + band + " (" + fmt(en.v) + "% model) — " + esc(EARLY_PLAN_SHORT[DATA.champs[id].arch]) + ".";
+      }
+      function earlyGameDetailHTML(role, id) {
+        const en = counterpartEntry(role, id);
+        if (!en) return "";
+        return '<div class="early-game"><span class="eg-k">Early game vs ' + esc(name(en.e)) + " (" + ROLE_LABEL[en.eRole] + ")</span>"
+          + "<p>" + esc(earlyGameBlurb(role, id, en)) + "</p>"
+          + '<p class="eg-cap">Model sketch from the matchup number above and both champions\' archetypes — a starting plan, not a substitute for matchup experience.</p></div>';
       }
 
       function draftCounter(role, id) {
@@ -1962,6 +2065,7 @@
             + '<span class="bd-row"><span class="bk">Synergy</span><span class="bd-bar"><i style="width:' + d.synergy.score + '%"></i></span><span class="bv">' + d.synergy.score + " · model-based</span></span>"
             + '<span class="bd-row"><span class="bk">Blind safety</span><span class="bd-bar"><i style="width:' + d.blind.score + '%"></i></span><span class="bv">' + d.blind.score + " · " + fmt(d.blind.exp) + "% exp. WR</span></span>"
             + '<span class="draft-reasons" style="display:block">' + d.reasons.map((r) => '<span style="display:block" class="dr-li">▸ ' + esc(r) + "</span>").join("") + "</span>"
+            + (() => { const cp = (d.counter.entries || []).filter((en) => en.eRole === state.role).reduce((a, b) => (!a || b.v < a.v ? b : a), null); return cp ? '<span class="draft-early">' + earlyGameShort(state.role, t.id, cp) + "</span>" : ""; })()
             + matchupBreakdownHTML(d.counter.entries)
             + "</button>";
         }).join("") + "</div>";
