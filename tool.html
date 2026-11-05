@@ -297,6 +297,20 @@
       .draft-chip img { width: 24px; height: 24px; border-radius: 50%; }
       .draft-chip button { border: 0; background: transparent; font-size: 16px; line-height: 1; padding: 2px 5px; color: var(--ink-soft); border-radius: 50%; }
       .draft-chips-empty { color: var(--ink-soft); font-size: 13.5px; }
+      /* ---------- expected roles (optional per-pick context) ---------- */
+      .draft-exp-roles { margin: 2px 0 10px; }
+      .draft-exp-roles[hidden] { display: none; }
+      .exp-roles-head { font-size: 12.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 5px; }
+      .exp-roles-head span { font-weight: 600; letter-spacing: 0; text-transform: none; }
+      .exp-role-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+      .exp-role-row img { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line); flex: none; }
+      .exp-role-row .exp-nm { font-weight: 600; font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+      .exp-role-row select {
+        margin-left: auto; flex: none; max-width: 62%; padding: 7px 9px;
+        border: 1px solid var(--line); border-radius: var(--radius-input);
+        background: var(--panel); color: var(--ink);
+      }
+      .exp-role-row select.set { border-color: var(--gold); color: var(--gold-strong); font-weight: 700; }
       /* ---------- draft trays (client-style team strips) ---------- */
       .draft-slot {
         width: 64px; flex: 0 0 64px; display: flex; flex-direction: column; padding: 0; overflow: hidden;
@@ -681,6 +695,7 @@
           min-height: 30px; display: flex; align-items: center; justify-content: center;
         }
         .draft-import { padding: 10px; }
+        .exp-role-row select { min-height: 44px; }
         .draft-recs-head { margin-top: 14px; }
         .draft-card { padding: 12px; }
         .draft-card-top { gap: 9px; }
@@ -741,7 +756,10 @@
         profiles. <b>The data behind every recommendation is printed on the card:</b> each locked enemy contributes
         one matchup number per candidate, labelled with where it came from — your CSV, a curated kit interaction
         (hard CC that cancels a channel, say), the same-role matchup model, or the cross-role model — and the weight
-        its role correspondence gave it. <b>One bad number is enough:</b> any single locked matchup under 45% at a
+        its role correspondence gave it. <b>Expected roles are optional context:</b> under each team you can tell the
+        draft where a locked flex pick is actually going, and that role — not the auto-guess shown in the selector —
+        drives its correspondence weight, its cross-role number, and whether it counts as your locked lane opponent.
+        The breakdown on each card marks any role you set. <b>One bad number is enough:</b> any single locked matchup under 45% at a
         real interaction weight drags the Counter score down and bars the pick from the Top 3, as does a weighted
         average under 47% — for every champion, not just a hardcoded few. <b>Read-only:</b> this mode only recommends — it never picks, hovers, or locks anything in your game client.</p>
         <div class="draft-body" id="draftBody" hidden>
@@ -763,6 +781,7 @@
             <div class="draft-group ally-g">
               <div class="draft-group-label"><span>Your team</span><span class="cnt" id="draftAllyCount">0 / 5</span></div>
               <div class="draft-chips" id="draftAllyChips"></div>
+              <div class="draft-exp-roles" id="draftAllyRoles" hidden></div>
               <div class="draft-picker">
                 <input id="draftAllyInput" type="search" placeholder="Search an ally champion…" autocomplete="off" aria-label="Search ally champion" />
                 <div class="draft-results" id="draftAllyResults" hidden></div>
@@ -771,6 +790,7 @@
             <div class="draft-group enemy-g">
               <div class="draft-group-label"><span>Enemy team</span><span class="cnt" id="draftEnemyCount">0 / 5</span></div>
               <div class="draft-chips" id="draftEnemyChips"></div>
+              <div class="draft-exp-roles" id="draftEnemyRoles" hidden></div>
               <div class="draft-picker">
                 <input id="draftEnemyInput" type="search" placeholder="Search an enemy champion…" autocomplete="off" aria-label="Search enemy champion" />
                 <div class="draft-results" id="draftEnemyResults" hidden></div>
@@ -804,7 +824,7 @@
           </div>
           <div class="draft-import">
             <label for="draftPaste">Import a draft (bridge link parameters or JSON)</label>
-            <textarea id="draftPaste" placeholder="live=1&amp;role=jungle&amp;ally=Orianna,Jinx&amp;enemy=Kayn&amp;bans=Master Yi,Zed  —  or  {&quot;role&quot;:&quot;jungle&quot;,&quot;ally&quot;:[&quot;Orianna&quot;],&quot;enemy&quot;:[&quot;Kayn&quot;],&quot;bans&quot;:[]}"></textarea>
+            <textarea id="draftPaste" placeholder="live=1&amp;role=jungle&amp;ally=Orianna,Jinx&amp;enemy=Kayn&amp;bans=Master Yi,Zed  —  or  {&quot;role&quot;:&quot;jungle&quot;,&quot;ally&quot;:[&quot;Orianna&quot;],&quot;enemy&quot;:[&quot;Kayn&quot;],&quot;bans&quot;:[],&quot;enemyRoles&quot;:{&quot;Kayn&quot;:&quot;jungle&quot;}}  —  expected roles are optional, as link params too: enemyRoles=Pantheon:support"></textarea>
             <div class="btn-row">
               <button type="button" class="btn" id="draftLoad">Load draft</button>
             </div>
@@ -1479,7 +1499,7 @@
       function renderAll() { syncClearUI(); syncFilterUI(); renderDraft(); renderList(); renderPoolBar(); renderEnemy(); renderDetail(); }
 
       /* ---------- Live Draft ---------- */
-      const draft = { active: false, role: "jungle", ally: [], enemy: [], bans: [] };
+      const draft = { active: false, role: "jungle", ally: [], enemy: [], bans: [], allyRoles: {}, enemyRoles: {} };
       const DRAFT_LIMITS = { ally: 5, enemy: 5 };
       let draftTarget = "ally";
       let draftGridQuery = "";
@@ -1541,17 +1561,31 @@
       function corrTxt(w) { return String(Math.round(w * 100) / 100); }
       // The role a locked enemy is scored as playing against `role`: a champion
       // who can play my role is my lane counterpart; anyone else is scored in
-      // the first of their roles that isn't mine.
-      function enemyDraftRole(e, role) {
+      // the first of their roles that isn't mine. This is the AUTO guess —
+      // the "Auto (…)" option in each pick's expected-role selector.
+      function autoEnemyDraftRole(e, role) {
         if (DATA.pools[role][e]) return role;
         const rs = DATA.champs[e].roles;
         return rs.find((r) => r !== role) || rs[0];
       }
       // An ally fills a different slot from mine when they can; only a
       // single-role ally who shares my role is scored as same-role.
-      function allyDraftRole(a, role) {
+      function autoAllyDraftRole(a, role) {
         const rs = DATA.champs[a].roles;
         return rs.find((r) => r !== role) || role;
+      }
+      // Expected roles: an optional per-pick override the user sets in the
+      // draft (a flex pick's real destination, say). When set, it replaces
+      // the auto guess everywhere the role is used — correspondence weight,
+      // cross-role number, counterpart detection, synergy weighting — and
+      // the matchup breakdown marks it as user-set. Unset picks keep Auto.
+      function enemyDraftRole(e, role) {
+        const o = draft.enemyRoles[e];
+        return (o && ROLE_ORDER.includes(o)) ? o : autoEnemyDraftRole(e, role);
+      }
+      function allyDraftRole(a, role) {
+        const o = draft.allyRoles[a];
+        return (o && ROLE_ORDER.includes(o)) ? o : autoAllyDraftRole(a, role);
       }
       // Builds e.g. "Hard counter: Vi and Syndra both can interrupt Nunu's channels."
       function hardCounterText(hard) {
@@ -1580,7 +1614,12 @@
          every cross-role pair has a specific, inspectable number instead of
          the old silent flat 50.0 whenever the archetypes had no affinity. */
       function crossRoleWR(role, id, e, eRole) {
-        const pa = DATA.pools[role][id], pb = (DATA.pools[eRole] || {})[e];
+        const pa = DATA.pools[role][id];
+        // An expected role the champion has no pool entry for (an off-meta
+        // assignment) falls back to their strength in their main role, so
+        // the pair still gets a specific number instead of a flat 50.
+        let pb = (DATA.pools[eRole] || {})[e];
+        if (!pb) { for (const r of ROLE_ORDER) { if (DATA.pools[r][e]) { pb = DATA.pools[r][e]; break; } } }
         if (!pa || !pb) return 50;
         const lo = id < e ? id : e, hi = id < e ? e : id;
         let n = fnv("x|" + role + "|" + eRole + "|" + lo + "|" + hi) * 2 - 1;
@@ -1600,12 +1639,19 @@
         return draft.enemy.map((e) => {
           const inPool = !!DATA.pools[role][e];
           const eRole = enemyDraftRole(e, role);
+          const expSet = !!(draft.enemyRoles[e] && ROLE_ORDER.includes(draft.enemyRoles[e]));
+          // "Counterpart" is decided by the expected role, not by whether
+          // the champion *could* play my role: a flex pick the user expects
+          // in another role is scored cross-role at that role's weight,
+          // even when a same-role matchup number exists for the pair.
+          const counterpart = eRole === role;
           const imp = importedWR(role, id, e);
           const inter = CROSS_INTERACTIONS[id + "|" + e];
-          if (imp != null) return { e, eRole, v: imp, w: inPool ? 3 : roleCorrWeight(role, eRole), src: "csv", srcLabel: "Your CSV", inter: null };
-          if (inter) return { e, eRole, v: inter.wr, w: 3, src: "kit", srcLabel: "Kit interaction", inter };
-          if (inPool) return { e, eRole, v: wr(role, id, e), w: 3, src: "model", srcLabel: "Matchup model", inter: null };
-          return { e, eRole, v: crossRoleWR(role, id, e, eRole), w: roleCorrWeight(role, eRole), src: "xmodel", srcLabel: "Cross-role model", inter: null };
+          if (imp != null) return { e, eRole, expSet, v: imp, w: counterpart ? 3 : roleCorrWeight(role, eRole), src: "csv", srcLabel: "Your CSV", inter: null };
+          if (inter) return { e, eRole, expSet, v: inter.wr, w: 3, src: "kit", srcLabel: "Kit interaction", inter };
+          if (counterpart && inPool) return { e, eRole, expSet, v: wr(role, id, e), w: 3, src: "model", srcLabel: "Matchup model", inter: null };
+          if (counterpart) return { e, eRole, expSet, v: crossRoleWR(role, id, e, eRole), w: 3, src: "xmodel", srcLabel: "Cross-role model", inter: null };
+          return { e, eRole, expSet, v: crossRoleWR(role, id, e, eRole), w: roleCorrWeight(role, eRole), src: "xmodel", srcLabel: "Cross-role model", inter: null };
         });
       }
       function matchupBreakdownHTML(entries) {
@@ -1614,7 +1660,7 @@
           + entries.map((en) =>
             '<span class="mu-row">' + icon(en.e)
             + '<span class="mu-nm">vs ' + esc(name(en.e)) + "</span>"
-            + '<span class="mu-role">' + ROLE_LABEL[en.eRole] + " · ×" + corrTxt(en.w) + " weight</span>"
+            + '<span class="mu-role">' + ROLE_LABEL[en.eRole] + (en.expSet ? " · expected role set by you" : "") + " · ×" + corrTxt(en.w) + " weight</span>"
             + '<span class="mu-src ' + en.src + '">' + esc(en.srcLabel) + "</span>"
             + '<span class="mu-wr ' + wrClass(en.v) + '">' + fmt(en.v) + "%</span></span>").join("")
           + "</span>";
@@ -1628,7 +1674,7 @@
         for (const en of entries) {
           wsum += en.w; vsum += en.w * en.v;
           if (!worst || en.v < worst.v) worst = en;
-          if (DATA.pools[role][en.e] && (!counterpart || en.v < counterpart.v)) counterpart = { e: en.e, v: en.v };
+          if (en.eRole === role && (!counterpart || en.v < counterpart.v)) counterpart = { e: en.e, v: en.v };
           // Strongest cross-role correspondence that actually moved this score —
           // cited on the card so the weighting is visible, not silent.
           if (en.src === "xmodel" && en.w >= 2 && Math.abs(en.v - 50) >= 2) {
@@ -1703,7 +1749,8 @@
 
       let draftCache = { sig: "", map: {} };
       function draftSig() {
-        return state.role + "|" + draft.ally.join(",") + "|" + draft.enemy.join(",") + "|" + draft.bans.join(",") + "|" + importVersion;
+        return state.role + "|" + draft.ally.join(",") + "|" + draft.enemy.join(",") + "|" + draft.bans.join(",")
+          + "|" + JSON.stringify(draft.allyRoles) + "|" + JSON.stringify(draft.enemyRoles) + "|" + importVersion;
       }
       function draftScore(role, id) {
         const sig = draftSig();
@@ -1712,7 +1759,7 @@
         const blind = champStats(role, id);
         const counter = draftCounter(role, id);
         const syn = draftSynergy(role, id);
-        const counterpartLocked = draft.enemy.some((e) => !!DATA.pools[role][e]);
+        const counterpartLocked = draft.enemy.some((e) => enemyDraftRole(e, role) === role);
         let wC, wS, wB;
         if (counterpartLocked) { wC = 0.55; wS = 0.25; wB = 0.20; }
         else if (draft.enemy.length) { wC = 0.30; wS = 0.30; wB = 0.40; }
@@ -1785,6 +1832,40 @@
             const parts = b.dataset.draftRemove.split(":");
             const key = parts[0] === "Ally" ? "ally" : parts[0] === "Enemy" ? "enemy" : "bans";
             draft[key] = draft[key].filter((x) => x !== parts[1]);
+            if (key === "ally") delete draft.allyRoles[parts[1]];
+            if (key === "enemy") delete draft.enemyRoles[parts[1]];
+            renderDraft(); renderList();
+          }));
+      }
+
+      /* One optional expected-role selector per locked ally / enemy pick.
+         "Auto (…)" is the model's guess, shown so the user can see what
+         will be used if they leave it alone; picking a role overrides the
+         guess for that pick everywhere it is scored. Bans get none — a ban
+         never enters the cross-role math. */
+      function renderDraftExpRoles(group, ids, key) {
+        const box = $("#draft" + group + "Roles");
+        if (!box) return;
+        if (!ids.length) { box.hidden = true; box.innerHTML = ""; return; }
+        box.hidden = false;
+        const map = key === "ally" ? draft.allyRoles : draft.enemyRoles;
+        box.innerHTML = '<div class="exp-roles-head">Expected roles <span>— optional; set one when you know where a flex pick is going</span></div>'
+          + ids.map((id) => {
+            const auto = key === "ally" ? autoAllyDraftRole(id, state.role) : autoEnemyDraftRole(id, state.role);
+            const cur = map[id] || "";
+            return '<div class="exp-role-row"><img src="assets/champs/' + id + '.png" alt="" />'
+              + '<span class="exp-nm">' + esc(name(id)) + "</span>"
+              + '<select data-exp-role="' + key + ":" + id + '" aria-label="Expected role for ' + esc(name(id)) + '"'
+              + (cur ? ' class="set"' : "") + ">"
+              + '<option value="">Auto (' + ROLE_LABEL[auto] + ")</option>"
+              + ROLE_ORDER.map((r) => '<option value="' + r + '"' + (cur === r ? " selected" : "") + ">" + ROLE_LABEL[r] + "</option>").join("")
+              + "</select></div>";
+          }).join("");
+        box.querySelectorAll("select[data-exp-role]").forEach((sel) =>
+          sel.addEventListener("change", () => {
+            const parts = sel.dataset.expRole.split(":");
+            const target = parts[0] === "ally" ? draft.allyRoles : draft.enemyRoles;
+            if (sel.value) target[parts[1]] = sel.value; else delete target[parts[1]];
             renderDraft(); renderList();
           }));
       }
@@ -1845,6 +1926,8 @@
         renderDraftChips("Ally", draft.ally);
         renderDraftChips("Enemy", draft.enemy);
         renderDraftChips("Ban", draft.bans);
+        renderDraftExpRoles("Ally", draft.ally, "ally");
+        renderDraftExpRoles("Enemy", draft.enemy, "enemy");
         renderDraftGrid();
         const recs = $("#draftRecs");
         const ranked = draftCandidates();
@@ -1932,6 +2015,28 @@
       }
 
       const DRAFT_ROLE_ALIASES = { top: "top", jungle: "jungle", mid: "mid", middle: "mid", adc: "adc", bottom: "adc", bot: "adc", support: "support", sup: "support" };
+      // "Name:role,Name:role" (query-string form) -> { rawName: rawRole }
+      function parseRoleMapParam(v) {
+        const out = {};
+        if (!v) return out;
+        for (const part of String(v).split(",")) {
+          const seg = part.split(/[:=]/);
+          if (seg.length >= 2 && seg[0].trim()) out[seg[0].trim()] = seg.slice(1).join(":").trim();
+        }
+        return out;
+      }
+      // { championNameOrId: roleName } -> { champId: roleKey }, keeping only
+      // entries for champions actually in the imported pick list.
+      function resolveRoleMap(raw, ids) {
+        const out = {};
+        if (!raw || typeof raw !== "object") return out;
+        for (const k in raw) {
+          const id = resolveChamp(String(k));
+          const r = DRAFT_ROLE_ALIASES[String(raw[k]).trim().toLowerCase()];
+          if (id && r && ids.includes(id)) out[id] = r;
+        }
+        return out;
+      }
       function applyDraftImport(obj, sourceLabel) {
         const status = $("#draftPasteStatus");
         const seen = new Set();
@@ -1949,12 +2054,16 @@
         const roleKey = obj.role ? DRAFT_ROLE_ALIASES[String(obj.role).trim().toLowerCase()] : null;
         if (roleKey) { state.role = roleKey; state.enemy = ""; state.selected = null; }
         draft.ally = ally; draft.enemy = enemy; draft.bans = bans;
+        draft.allyRoles = resolveRoleMap(obj.allyRoles || obj.ally_roles, ally);
+        draft.enemyRoles = resolveRoleMap(obj.enemyRoles || obj.enemy_roles, enemy);
         draft.active = true; draft.role = state.role;
         renderRoles(); fillEnemy(); renderAll();
         if (status) {
+          const expCount = Object.keys(draft.allyRoles).length + Object.keys(draft.enemyRoles).length;
           status.className = "draft-import-status";
           status.textContent = "Loaded " + sourceLabel + ": " + ally.length + " allies, " + enemy.length
-            + " enemies, " + bans.length + " bans" + (roleKey ? ", role " + ROLE_LABEL[state.role] : "") + ". Recommendations updated.";
+            + " enemies, " + bans.length + " bans" + (roleKey ? ", role " + ROLE_LABEL[state.role] : "")
+            + (expCount ? ", expected roles set for " + expCount + " pick(s)" : "") + ". Recommendations updated.";
         }
         return true;
       }
@@ -1964,7 +2073,7 @@
         if (t.startsWith("{")) {
           try {
             const j = JSON.parse(t);
-            return { role: j.role, ally: j.ally || [], enemy: j.enemy || [], bans: j.bans || [] };
+            return { role: j.role, ally: j.ally || [], enemy: j.enemy || [], bans: j.bans || [], allyRoles: j.allyRoles || j.ally_roles || {}, enemyRoles: j.enemyRoles || j.enemy_roles || {} };
           } catch (e) { return null; }
         }
         let qs = t;
@@ -1973,7 +2082,7 @@
         const p = new URLSearchParams(qs);
         const list = (k) => { const v = p.get(k); return v ? v.split(",").map((s) => s.trim()).filter(Boolean) : []; };
         if (!p.has("role") && !p.has("ally") && !p.has("enemy") && !p.has("bans")) return null;
-        return { role: p.get("role"), ally: list("ally"), enemy: list("enemy"), bans: list("bans") };
+        return { role: p.get("role"), ally: list("ally"), enemy: list("enemy"), bans: list("bans"), allyRoles: parseRoleMapParam(p.get("allyRoles")), enemyRoles: parseRoleMapParam(p.get("enemyRoles")) };
       }
       function loadDraftFromPaste() {
         const status = $("#draftPasteStatus");
@@ -1988,7 +2097,7 @@
         const p = new URLSearchParams(location.search);
         if (!p.has("live") && !p.has("ally") && !p.has("enemy") && !p.has("bans")) return;
         const list = (k) => { const v = p.get(k); return v ? v.split(",").map((s) => s.trim()).filter(Boolean) : []; };
-        applyDraftImport({ role: p.get("role"), ally: list("ally"), enemy: list("enemy"), bans: list("bans") }, "link draft");
+        applyDraftImport({ role: p.get("role"), ally: list("ally"), enemy: list("enemy"), bans: list("bans"), allyRoles: parseRoleMapParam(p.get("allyRoles")), enemyRoles: parseRoleMapParam(p.get("enemyRoles")) }, "link draft");
         const panel = $("#draftPanel");
         if (panel) panel.scrollIntoView({ block: "start" });
       }
@@ -2005,6 +2114,7 @@
         });
         $("#draftClear").addEventListener("click", () => {
           draft.ally = []; draft.enemy = []; draft.bans = [];
+          draft.allyRoles = {}; draft.enemyRoles = {};
           const st = $("#draftPasteStatus"); if (st) { st.className = "draft-import-status"; st.textContent = ""; }
           renderDraft(); renderList();
         });
