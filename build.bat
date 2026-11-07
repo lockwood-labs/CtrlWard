@@ -62,7 +62,9 @@ if errorlevel 1 (
 )
 
 echo STEP 2 of 2: Building CtrlWard.exe (about a minute)...
-%PY% -m PyInstaller --onefile --name CtrlWard --icon ctrl_ward.ico --add-data "tool.html;." --add-data "ctrl_ward.ico;." app.py >> "%LOG%" 2>&1
+set ADDDATA=
+if exist report_config.json set ADDDATA=--add-data "report_config.json;."
+%PY% -m PyInstaller --onefile --name CtrlWard --icon ctrl_ward.ico --add-data "tool.html;." --add-data "ctrl_ward.ico;." %ADDDATA% app.py >> "%LOG%" 2>&1
 if errorlevel 1 (
   echo.
   echo STEP 2 FAILED - the build did not finish.

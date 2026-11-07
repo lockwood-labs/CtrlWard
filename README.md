@@ -59,9 +59,15 @@ Prefer not to run a prebuilt .exe? Everything is here:
 
 ## Privacy
 
-All local. Traffic is only: your League client on `127.0.0.1`, Riot's public
-Data Dragon CDN, and this repo's release API if update checks are configured.
-No accounts, no API keys, no telemetry.
+All local by default. Traffic is only: your League client on `127.0.0.1`,
+Riot's public Data Dragon CDN, and this repo's release API if update checks
+are configured. No accounts, no API keys.
+
+Optional, off by default: if you turn on anonymous draft reporting, the app
+sends one record per completed draft — date, role, queue, champion names in
+the draft, the Top 3 it showed you, and later the game's result (win/loss).
+No summoner names, no Riot IDs, no match IDs, no timestamps. Nothing is sent
+unless you opt in.
 
 *Unofficial fan project. Not affiliated with Riot Games. League of Legends
 and all champion artwork are trademarks of Riot Games, Inc.*

@@ -7,3 +7,6 @@ __pycache__/
 build_log.txt
 tool_version.txt
 update_config.json
+report_config.json
+ctrlward_settings.json
+ctrlward_pending.json
