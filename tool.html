@@ -556,6 +556,217 @@
       .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
       .draft-grid-toggle { display: none; }
 
+      /* ---------- app tabs ---------- */
+      .app-tabs { display: flex; gap: 10px; margin: 20px 0 4px; }
+      .app-tab {
+        flex: 1 1 0; text-align: left; padding: 13px 16px; cursor: pointer;
+        background: var(--panel); color: var(--ink-soft); border: 1px solid var(--line);
+        clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+      }
+      .app-tab .tab-t { display: block; font-family: var(--font-display); font-weight: 800; font-size: 17px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink); }
+      .app-tab .tab-s { display: block; font-size: 13px; margin-top: 2px; }
+      .app-tab[aria-selected="true"] { border-color: var(--gold); background: var(--gold-soft); }
+      .app-tab[aria-selected="true"] .tab-t { color: var(--gold-strong); }
+      .app-tab.intel-tab[aria-selected="true"] { border-color: var(--teal); background: #0a2027; box-shadow: 0 0 0 1px var(--teal), 0 0 18px rgba(45, 217, 232, 0.25); }
+      .app-tab.intel-tab[aria-selected="true"] .tab-t { color: var(--teal); }
+      /* The Intel view re-tints the whole page: cyan grid, cyan glow. */
+      body[data-view="scout"] {
+        --bg-image: linear-gradient(rgba(45, 217, 232, 0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(45, 217, 232, 0.10) 1px, transparent 1px), repeating-linear-gradient(0deg, rgba(45,217,232,0.05) 0 1px, transparent 1px 3px), radial-gradient(760px 360px at 15% -40px, rgba(45, 217, 232, 0.16), transparent 60%);
+      }
+
+      /* ---------- Player Intel (Lookup + Lobby Scout) ----------
+         A deliberately different visual language from the rankings:
+         terminal dossier, cyan-first, monospace data labels, squared
+         scan panels instead of the orange PROJECT cards. */
+      .intel-shell {
+        margin-top: 16px; background: #070d13; border: 1px solid var(--teal);
+        box-shadow: 0 0 0 1px rgba(45,217,232,0.25), 0 14px 34px rgba(0,0,0,0.6);
+        padding: 18px; position: relative;
+      }
+      .intel-shell::before {
+        content: ""; position: absolute; inset: 0; pointer-events: none;
+        background: repeating-linear-gradient(0deg, rgba(45,217,232,0.045) 0 1px, transparent 1px 3px);
+      }
+      .intel-shell > * { position: relative; }
+      .intel-head { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
+      .intel-kicker { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; letter-spacing: 0.14em; color: var(--teal); }
+      .intel-head h2 { font-size: clamp(24px, 4.6vw, 34px); color: var(--ink); margin-top: 4px; }
+      .intel-head h2 .cy { color: var(--teal); }
+      .intel-lede { color: var(--ink-soft); max-width: 62ch; margin: 8px 0 12px; font-size: 16px; }
+      .intel-radar { flex: none; margin-top: 2px; }
+      .radar-sweep { transform-origin: 40px 40px; animation: radarspin 7s linear infinite; }
+      @keyframes radarspin { to { transform: rotate(360deg); } }
+      @media (prefers-reduced-motion: reduce) { .radar-sweep { animation: none; } }
+      .intel-modes { display: flex; gap: 8px; margin: 18px 0 14px; }
+      .intel-mode-btn {
+        flex: 1 1 0; padding: 11px 12px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; font-size: 14.5px;
+        background: var(--panel-2); color: var(--ink-soft); border: 1px solid var(--line); cursor: pointer;
+        clip-path: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+      }
+      .intel-mode-btn[aria-pressed="true"] { background: var(--teal); color: #04222a; border-color: var(--teal); }
+      .intel-form {
+        display: grid; gap: 10px; grid-template-columns: 1fr;
+        background: var(--panel-2); border: 1px solid var(--line); padding: 14px;
+      }
+      @media (min-width: 760px) { .intel-form { grid-template-columns: 1.7fr 0.8fr auto; align-items: end; } }
+      .intel-form .field label { color: var(--teal); }
+      .intel-form .field input, .intel-form .field select { background: #05090e; border-color: #274b57; font-family: ui-monospace, Menlo, monospace; }
+      .scout-btn {
+        border: 1px solid var(--teal); background: var(--teal); color: #04222a;
+        padding: 10px 18px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; font-size: 14.5px; cursor: pointer;
+        clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+      }
+      .intel-hint { grid-column: 1 / -1; margin: 0; font-size: 13.5px; color: var(--ink-soft); }
+      .intel-linkbtn { background: none; border: 0; color: var(--teal); font-weight: 700; padding: 0; text-decoration: underline; cursor: pointer; font-size: 13.5px; }
+      .intel-error { margin: 10px 0 0; color: var(--bad); font-weight: 700; font-size: 14.5px; }
+      .intel-error[hidden] { display: none; }
+      .intel-empty {
+        margin-top: 14px; border: 1px dashed #274b57; padding: 22px 16px; text-align: center; color: var(--ink-soft);
+        font-family: ui-monospace, Menlo, monospace; font-size: 14px;
+      }
+      /* dossier */
+      .dos-head {
+        margin-top: 14px; border: 1px solid var(--teal); background: var(--panel);
+        padding: 14px 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+      }
+      .dos-head img { width: 64px; height: 64px; border: 1px solid var(--teal); }
+      .dos-id { font-family: var(--font-display); font-size: 24px; font-weight: 800; line-height: 1.1; }
+      .dos-id .tag { color: var(--teal); }
+      .dos-meta { font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: var(--ink-soft); letter-spacing: 0.04em; }
+      .dos-verdict {
+        margin-left: auto; text-align: right; font-family: ui-monospace, Menlo, monospace;
+      }
+      .dos-verdict .dv-k { font-size: 11px; letter-spacing: 0.12em; color: var(--ink-soft); text-transform: uppercase; }
+      .dos-verdict .dv-v { font-size: 19px; font-weight: 800; color: var(--teal); }
+      .dos-verdict .dv-v.hot { color: var(--bad); }
+      .dos-verdict .dv-v.cold { color: var(--warn); }
+      .rank-chip { display: inline-block; border: 1px solid var(--gold); color: var(--gold-strong); background: var(--gold-soft); padding: 1px 8px; font-family: ui-monospace, Menlo, monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; vertical-align: 2px; margin-left: 8px; }
+      .crow .cm2 { font-size: 12.5px; color: var(--ink-soft); font-family: ui-monospace, Menlo, monospace; }
+      .signal-row { display: grid; gap: 10px; grid-template-columns: repeat(2, 1fr); margin-top: 12px; }
+      @media (min-width: 760px) { .signal-row { grid-template-columns: repeat(4, 1fr); } }
+      .signal { background: var(--panel-2); border: 1px solid var(--line); padding: 10px 12px; }
+      .signal .sk { font-family: ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); display: flex; justify-content: space-between; gap: 6px; }
+      .signal .sk b { color: var(--ink); }
+      .signal .sbar { height: 6px; background: var(--chip); margin-top: 7px; overflow: hidden; }
+      .signal .sbar i { display: block; height: 100%; background: var(--teal); }
+      .signal .sd { font-size: 12.5px; color: var(--ink-soft); margin-top: 5px; }
+      .dos-grid { display: grid; gap: 12px; grid-template-columns: 1fr; margin-top: 12px; }
+      @media (min-width: 860px) { .dos-grid { grid-template-columns: 1fr 1fr; } }
+      .dos-card { background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; min-width: 0; }
+      .dos-card h3 { font-size: 15px; color: var(--teal); letter-spacing: 0.08em; margin-bottom: 10px; }
+      .dos-card h3 .sub { color: var(--ink-soft); font-family: ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: 0.02em; text-transform: none; }
+      .formdots { display: flex; gap: 4px; flex-wrap: wrap; margin: 4px 0 8px; }
+      .fdot { width: 16px; height: 16px; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-family: ui-monospace, Menlo, monospace; }
+      .fdot.w { background: rgba(74, 222, 128, 0.18); color: var(--good); border: 1px solid var(--good); }
+      .fdot.l { background: rgba(251, 113, 133, 0.14); color: var(--bad); border: 1px solid var(--bad); }
+      .formline { font-size: 14px; color: var(--ink-soft); }
+      .formline b { color: var(--ink); }
+      .crow { display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+      .crow:first-of-type { border-top: 0; }
+      .crow img { width: 38px; height: 38px; border: 1px solid var(--line); }
+      .crow .cn { font-weight: 700; }
+      .crow .cm { font-size: 12.5px; color: var(--ink-soft); font-family: ui-monospace, Menlo, monospace; }
+      .crow .cw2 { text-align: right; }
+      .crow .cw2 .wr { font-family: var(--font-display); font-size: 18px; }
+      .crow .cw2 .gr { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+      .gr-Signature { color: var(--teal); } .gr-Comfort { color: var(--good); }
+      .gr-Played { color: var(--warn); } .gr-Occasional { color: var(--ink-soft); } .gr-Unproven { color: var(--bad); }
+      .rolebar { display: flex; height: 14px; overflow: hidden; border: 1px solid var(--line); margin: 6px 0 8px; }
+      .rolebar i { display: block; height: 100%; }
+      .rolebar-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--ink-soft); font-family: ui-monospace, Menlo, monospace; }
+      .rolebar-legend b { color: var(--ink); }
+      .tagrow { display: flex; flex-wrap: wrap; gap: 7px; }
+      .ptag { font-family: ui-monospace, Menlo, monospace; font-size: 12px; padding: 3px 9px; border: 1px solid #274b57; color: var(--teal); background: #0a2027; }
+      .ptag.warn { color: var(--warn); border-color: var(--warn); background: rgba(251,191,36,0.08); }
+      .ptag.hot { color: var(--bad); border-color: var(--bad); background: rgba(251,113,133,0.08); }
+      .mrow2 { display: grid; grid-template-columns: 26px 34px 1fr auto; gap: 9px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); font-size: 14px; }
+      .mrow2:first-of-type { border-top: 0; }
+      .mrow2 img { width: 34px; height: 34px; border: 1px solid var(--line); }
+      .mrow2 .res { font-family: ui-monospace, Menlo, monospace; font-weight: 800; font-size: 12px; text-align: center; padding: 3px 0; }
+      .mrow2 .res.w { color: var(--good); border: 1px solid var(--good); }
+      .mrow2 .res.l { color: var(--bad); border: 1px solid var(--bad); }
+      .mrow2 .mk { font-weight: 700; }
+      .mrow2 .mm { font-size: 12.5px; color: var(--ink-soft); font-family: ui-monospace, Menlo, monospace; }
+      .mrow2 .ago { font-size: 12.5px; color: var(--ink-soft); white-space: nowrap; }
+      .plan-grid { display: grid; gap: 12px; grid-template-columns: 1fr; margin-top: 12px; }
+      @media (min-width: 860px) { .plan-grid { grid-template-columns: 1fr 1fr; } }
+      .plan-card { border: 1px solid var(--line); background: var(--panel-2); padding: 14px 16px; }
+      .plan-card.against { border-color: var(--bad); }
+      .plan-card.with { border-color: var(--teal); }
+      .plan-card h3 { font-size: 15px; margin-bottom: 8px; }
+      .plan-card.against h3 { color: var(--bad); } .plan-card.with h3 { color: var(--teal); }
+      .plan-card ul { margin: 0; padding: 0; list-style: none; }
+      .plan-card li { font-size: 14.5px; padding: 4px 0 0; }
+      .plan-card li::before { content: "▸ "; font-weight: 700; }
+      .plan-card.against li::before { color: var(--bad); } .plan-card.with li::before { color: var(--teal); }
+      .dos-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; align-items: center; }
+      .copy-status { font-size: 13.5px; color: var(--teal); font-weight: 600; }
+      /* lobby */
+      .intel-lobby-intro { color: var(--ink-soft); margin: 0 0 12px; max-width: 66ch; }
+      .intel-lobby-intro b { color: var(--ink); }
+      .lobby-row { display: grid; gap: 8px; grid-template-columns: 1fr; margin-top: 8px; background: var(--panel-2); border: 1px solid var(--line); padding: 10px 12px; }
+      @media (min-width: 760px) { .lobby-row { grid-template-columns: 92px 1.35fr 0.6fr 1fr; align-items: center; } }
+      .lobby-slot { font-family: ui-monospace, Menlo, monospace; font-size: 12px; letter-spacing: 0.1em; color: var(--teal); text-transform: uppercase; }
+      .lobby-row input, .lobby-row select {
+        width: 100%; padding: 9px 11px; border: 1px solid #274b57; background: #05090e; color: var(--ink);
+        font-family: ui-monospace, Menlo, monospace;
+      }
+      .lobby-import { margin-top: 14px; border: 1px solid var(--line); background: var(--panel-2); padding: 12px; }
+      .lobby-import label { display: block; font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); margin-bottom: 5px; }
+      .lobby-import textarea { width: 100%; min-height: 52px; border: 1px solid #274b57; background: #05090e; color: var(--ink); padding: 9px 10px; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+      .lobby-import-status { margin-top: 8px; font-weight: 600; font-size: 14px; }
+      .lobby-import-status.err { color: var(--bad); }
+      .me-chip { border-color: var(--teal); color: var(--teal); background: #0a2027; }
+      /* live lobby (fed by the desktop app's CTRLWARD_STATE) */
+      .live-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+      .live-head h3 { font-size: 16px; color: var(--teal); letter-spacing: 0.08em; }
+      .live-head .live-note { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--ink-soft); }
+      .lobby-cards.live-cards { margin-top: 10px; }
+      .p-card .pc-open-inline { margin-left: auto; flex: none; font-size: 13px; font-weight: 700; color: var(--teal); }
+      .self-tag { font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #04222a; background: var(--teal); padding: 1px 6px; margin-left: 7px; vertical-align: 2px; }
+      /* manual lobby entry: clearly the secondary path */
+      .lobby-manual { margin-top: 18px; border: 1px dashed #274b57; padding: 12px 14px; }
+      .lobby-manual summary { cursor: pointer; font-weight: 700; font-size: 14.5px; color: var(--ink-soft); letter-spacing: 0.03em; }
+      .lobby-manual summary:hover { color: var(--teal); }
+      .lobby-manual[open] summary { color: var(--teal); margin-bottom: 10px; }
+      .scout-note { margin-top: 10px; font-size: 13.5px; color: var(--ink-soft); font-family: ui-monospace, Menlo, monospace; }
+      .scout-note.err { color: var(--bad); font-weight: 700; }
+      .lobby-cards { display: grid; gap: 10px; grid-template-columns: 1fr; margin-top: 14px; }
+      @media (min-width: 700px) { .lobby-cards { grid-template-columns: 1fr 1fr; } }
+      @media (min-width: 1020px) { .lobby-cards { grid-template-columns: repeat(3, 1fr); } }
+      .p-card { background: var(--panel); border: 1px solid var(--line); padding: 13px 14px; text-align: left; color: var(--ink); width: 100%; }
+      button.p-card { cursor: pointer; font: inherit; }
+      button.p-card:hover, button.p-card:focus-visible { border-color: var(--teal); }
+      .p-card .pc-top { display: flex; gap: 10px; align-items: center; }
+      .p-card .pc-top img { width: 44px; height: 44px; border: 1px solid var(--line); }
+      .p-card .pc-id { font-weight: 800; font-size: 16px; line-height: 1.15; overflow-wrap: anywhere; }
+      .p-card .pc-id .tag { color: var(--teal); }
+      .p-card .pc-meta { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: var(--ink-soft); }
+      .p-card .pc-verdict { margin-left: auto; flex: none; font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 8px; border: 1px solid var(--teal); color: var(--teal); }
+      .p-card .pc-verdict.hot { border-color: var(--bad); color: var(--bad); }
+      .p-card .pc-verdict.cold { border-color: var(--warn); color: var(--warn); }
+      .p-card .pc-line { font-size: 13.5px; color: var(--ink-soft); margin-top: 8px; }
+      .p-card .pc-line b { color: var(--ink); }
+      .p-card .pc-open { display: block; margin-top: 9px; font-size: 13px; font-weight: 700; color: var(--teal); }
+      .teamread { margin-top: 14px; border: 1px solid var(--teal); background: var(--panel); padding: 15px 17px; }
+      .teamread h3 { color: var(--teal); font-size: 17px; margin-bottom: 6px; }
+      .teamread .tr-stats { display: flex; flex-wrap: wrap; gap: 8px 20px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; color: var(--ink-soft); margin-bottom: 8px; }
+      .teamread .tr-stats b { color: var(--ink); }
+      .teamread ul { margin: 0; padding: 0; list-style: none; }
+      .teamread li { font-size: 14.5px; padding: 4px 0 0; }
+      .teamread li::before { content: "▸ "; color: var(--teal); font-weight: 700; }
+      @media (max-width: 767px) {
+        .app-tabs { flex-direction: column; gap: 8px; }
+        .app-tab { flex: none; min-height: 52px; }
+        .intel-shell { padding: 13px; margin-top: 12px; }
+        .intel-radar { display: none; }
+        .intel-mode-btn, .scout-btn { min-height: 48px; }
+        .intel-form input, .intel-form select, .lobby-row input, .lobby-row select { min-height: 48px; }
+        .dos-head img { width: 52px; height: 52px; }
+        .dos-verdict { margin-left: 0; text-align: left; }
+        .mrow2 { grid-template-columns: 24px 32px 1fr auto; gap: 7px; }
+      }
+
       /* ---------- mobile pass (phones first: 360–430px) ---------- */
       @media (max-width: 767px) {
         html, body { overflow-x: clip; }
@@ -748,6 +959,18 @@
         </div>
       </div>
 
+      <nav class="app-tabs" role="tablist" aria-label="CtrlWard tools">
+        <button type="button" class="app-tab" id="tabRankings" role="tab" aria-selected="true" aria-controls="viewRankings">
+          <span class="tab-t">Rankings &amp; Draft</span>
+          <span class="tab-s">Blind-pick safety for all 173 champions, plus the Live Draft companion.</span>
+        </button>
+        <button type="button" class="app-tab intel-tab" id="tabScout" role="tab" aria-selected="false" aria-controls="viewScout">
+          <span class="tab-t">Player Intel</span>
+          <span class="tab-s">Player Lookup + Lobby Scout — comfort picks, recent form, tendencies.</span>
+        </button>
+      </nav>
+
+      <div id="viewRankings">
       <div class="draft-panel" id="draftPanel">
         <div class="draft-head">
           <div>
@@ -991,6 +1214,106 @@
           <div class="import-status" id="csvStatus" aria-live="polite"></div>
         </div>
       </section>
+      </div>
+
+      <div id="viewScout" hidden>
+        <section class="intel-shell" aria-labelledby="intelTitle">
+          <div class="intel-head">
+            <div>
+              <div class="intel-kicker">FILE // PLAYER INTEL — LOOKUP + LOBBY SCOUT</div>
+              <h2 id="intelTitle">Scout a player. <span class="cy">Read the lobby.</span></h2>
+              <p class="intel-lede">One scouting desk, two jobs. <b>Player Lookup</b> pulls a full dossier on any
+              Riot ID — the champions they're actually comfortable on, their form over the last window, and the
+              tendencies you can play around. <b>Lobby Scout</b> lines up your whole champ-select team at once
+              and reads the lobby as a unit: who to play through, who needs cover, and what your comp is missing.</p>
+            </div>
+            <svg class="intel-radar" width="80" height="80" viewBox="0 0 80 80" aria-hidden="true">
+              <circle cx="40" cy="40" r="36" fill="none" stroke="#2dd9e8" stroke-opacity="0.5" />
+              <circle cx="40" cy="40" r="24" fill="none" stroke="#2dd9e8" stroke-opacity="0.35" />
+              <circle cx="40" cy="40" r="12" fill="none" stroke="#2dd9e8" stroke-opacity="0.35" />
+              <g class="radar-sweep"><path d="M40 40 L40 4 A36 36 0 0 1 65 15 Z" fill="#2dd9e8" fill-opacity="0.22" /><line x1="40" y1="40" x2="40" y2="4" stroke="#2dd9e8" /></g>
+              <circle cx="56" cy="30" r="3" fill="#ff7a1a" />
+              <circle cx="30" cy="55" r="2.5" fill="#2dd9e8" />
+              <circle cx="40" cy="40" r="2.5" fill="#edf4f8" />
+            </svg>
+          </div>
+
+          <div class="intel-modes" role="group" aria-label="Scout mode">
+            <button type="button" class="intel-mode-btn" id="modeLookup" aria-pressed="true">Player Lookup</button>
+            <button type="button" class="intel-mode-btn" id="modeLobby" aria-pressed="false">Lobby Scout</button>
+          </div>
+
+          <div id="paneLookup">
+            <form class="intel-form" id="lookupForm">
+              <div class="field">
+                <label for="scoutId">Riot ID</label>
+                <input id="scoutId" type="text" placeholder="GameName#TAG" autocomplete="off" spellcheck="false" />
+              </div>
+              <div class="field">
+                <label for="scoutRegion">Platform</label>
+                <select id="scoutRegion">
+                  <option value="na1">NA</option>
+                  <option value="euw1">EUW</option>
+                  <option value="eun1">EUNE</option>
+                  <option value="kr">KR</option>
+                  <option value="br1">BR</option>
+                  <option value="la1">LAN</option>
+                  <option value="la2">LAS</option>
+                  <option value="oc1">OCE</option>
+                  <option value="tr1">TR</option>
+                  <option value="jp1">JP</option>
+                </select>
+              </div>
+              <button type="submit" class="scout-btn">Scout player</button>
+              <p class="intel-hint">A full Riot ID is name <i>and</i> tag — names alone aren't unique.
+              Scouting runs through the CtrlWard desktop app, which holds the Riot API key.</p>
+            </form>
+            <p class="intel-error" id="lookupError" hidden></p>
+            <div id="scoutResult" aria-live="polite">
+              <div class="intel-empty">NO DOSSIER OPEN — enter a Riot ID above to pull a player's file.</div>
+            </div>
+          </div>
+
+          <div id="paneLobby" hidden>
+            <div class="live-head">
+              <h3>Live lobby</h3>
+              <span class="live-note">Fed by the desktop app while you're in champ select — tap a teammate to scout them.</span>
+            </div>
+            <div id="liveLobby" aria-live="polite">
+              <div class="intel-empty">No live lobby — enter champ select in the desktop app, or look a player up above.</div>
+            </div>
+            <div class="btn-row" id="liveActions" hidden>
+              <button type="button" class="scout-btn" id="liveScoutMe">Scout me</button>
+            </div>
+            <p class="intel-error" id="liveError" hidden></p>
+
+            <details class="lobby-manual">
+              <summary>Manual fallback — type a lobby by hand</summary>
+              <p class="intel-lobby-intro">Only for when there's no live lobby to read. Your side of champ select
+              is the one you can see — enemy names stay hidden until the loading screen. Add your teammates (and
+              yourself), note what each of you has locked or is hovering, and scout the team as a unit.
+              <b>Slot 1 is you</b> — the Scout me button opens your own full dossier from it, in the same view a
+              lookup uses. A champ-select bridge paste can also be loaded into the slots below.</p>
+              <div id="lobbyRows"></div>
+              <div class="btn-row">
+                <button type="button" class="scout-btn" id="lobbyScoutBtn">Scout this lobby</button>
+                <button type="button" class="btn ghost me-chip" id="lobbyScoutMe">Scout me (Slot 1)</button>
+                <button type="button" class="btn ghost" id="lobbyClear">Clear</button>
+              </div>
+              <div class="lobby-import">
+                <label for="lobbyPaste">Import a lobby (bridge paste — one player per line)</label>
+                <textarea id="lobbyPaste" placeholder="Name#TAG, Champion, Role — e.g. MoonlightJG#KR2, Kayn, Jungle. Champion and role are optional; a champ-select bridge link carrying scoutLobby=Name%23TAG:Kayn:Jungle,… works too."></textarea>
+                <div class="btn-row">
+                  <button type="button" class="btn ghost" id="lobbyLoad">Load lobby</button>
+                </div>
+                <div class="lobby-import-status" id="lobbyPasteStatus" aria-live="polite"></div>
+              </div>
+            </details>
+            <p class="intel-error" id="lobbyError" hidden></p>
+            <div id="lobbyResult" aria-live="polite"></div>
+          </div>
+        </section>
+      </div>
 
       <footer>
         <p>
@@ -2240,6 +2563,614 @@
         if (gridSearch) gridSearch.addEventListener("input", () => { draftGridQuery = gridSearch.value; renderDraftGrid(); });
       }
 
+      /* ---------- Player Intel: Player Lookup + Lobby Scout ----------
+         One feature, two modes, in the Intel tab. Every profile shown here
+         comes from the desktop app's local endpoint — GET /api/lookup on
+         this same origin, by Riot ID + platform for a manual lookup or by
+         puuid for a lobby teammate. The live lobby list is driven by
+         window.CTRLWARD_STATE, which the app's injected script refreshes
+         on every poll and announces with a 'ctrlward-state' event.
+         The tab never invents a profile: when the endpoint is missing or
+         not configured — as in the standalone web preview — it says so. */
+      function parseRiotId(raw) {
+        const t = String(raw || "").trim();
+        const i = t.lastIndexOf("#");
+        if (i < 1) return null;
+        const nm = t.slice(0, i).trim(), tg = t.slice(i + 1).trim();
+        if (nm.length < 2 || tg.length < 2 || tg.length > 6 || /\s/.test(tg)) return null;
+        return { name: nm, tag: tg };
+      }
+      const sesc = (v) => esc(String(v == null ? "" : v));
+      const PLATFORM_LABEL = { na1: "NA", euw1: "EUW", eun1: "EUNE", kr: "KR", br1: "BR", la1: "LAN", la2: "LAS", oc1: "OCE", tr1: "TR", jp1: "JP" };
+      function platformLabel(p) {
+        if (!p) return "";
+        return PLATFORM_LABEL[String(p).toLowerCase()] || String(p).toUpperCase();
+      }
+      function roleLabelOf(r) {
+        if (!r) return "";
+        const k = String(r).toLowerCase();
+        return ROLE_LABEL[k] || (String(r).charAt(0).toUpperCase() + String(r).slice(1));
+      }
+      function tierLabel(tier, div) {
+        if (!tier) return "";
+        const t = String(tier).charAt(0).toUpperCase() + String(tier).slice(1).toLowerCase();
+        return div ? t + " " + div : t;
+      }
+      function rankText(rank) {
+        if (!rank) return "Unranked";
+        const base = tierLabel(rank.tier, rank.rank);
+        return base + (rank.lp != null ? " · " + rank.lp + " LP" : "");
+      }
+      /* ----- the lookup endpoint ----- */
+      function lookupErrorMessage(code) {
+        switch (code) {
+          case "riot_key_not_configured":
+            return "Player scouting isn't switched on yet — the app owner needs to add a Riot API key.";
+          case "player_not_found":
+            return "No player found for that Riot ID — check the name and tag.";
+          case "riot_rate_limited":
+            return "Riot's API is rate-limiting us — try again in a minute.";
+          default:
+            return "Scouting lives in the desktop app — it needs the local client connection.";
+        }
+      }
+      async function fetchProfile(params) {
+        const qs = new URLSearchParams(params);
+        let data = null;
+        try {
+          const res = await fetch("/api/lookup?" + qs.toString(), { headers: { "Accept": "application/json" } });
+          data = await res.json().catch(() => null);
+        } catch (e) {
+          throw new Error("lookup_unreachable");
+        }
+        if (!data) throw new Error("lookup_unreachable");
+        if (data.error) throw new Error(String(data.error));
+        return data;
+      }
+      /* ----- profile rendering helpers (real fields only) ----- */
+      function champIdOf(champion) {
+        if (!champion) return null;
+        if (DATA.champs[champion]) return champion;
+        return resolveChamp(String(champion));
+      }
+      function champDisplay(champion) {
+        const id = champIdOf(champion);
+        return id ? name(id) : String(champion || "");
+      }
+      function champIconHTML(champion) {
+        const id = champIdOf(champion);
+        return id ? icon(id) : "";
+      }
+      function comfortGrade(games, wr) {
+        if (games >= 45 && wr >= 55) return "Signature";
+        if (games >= 25) return "Comfort";
+        if (games >= 10) return "Played";
+        if (games >= 4) return "Occasional";
+        return "Unproven";
+      }
+      function lastPlayedLabel(d) {
+        if (d == null) return "";
+        if (d === 0) return "today";
+        if (d === 1) return "yesterday";
+        return d + "d ago";
+      }
+      function winPct(w, l) {
+        const t = (w || 0) + (l || 0);
+        return t ? Math.round((w || 0) / t * 100) : 0;
+      }
+      function streakInfo(streak) {
+        // The API hands back a streak string (e.g. "W3" / "L4") or null.
+        // Show it verbatim; only a leading W/L + count is interpreted.
+        if (!streak) return null;
+        const s = String(streak).trim();
+        const m = s.match(/^([WL])\s*(\d+)$/i);
+        if (m) return { text: s.toUpperCase(), win: m[1].toUpperCase() === "W", n: parseInt(m[2], 10) };
+        return { text: s, win: null, n: 0 };
+      }
+      function formDotsSeqHTML(seq) {
+        return '<span class="formdots">' + (seq || []).map((s) =>
+          '<span class="fdot ' + (String(s).toUpperCase() === "W" ? "w" : "l") + '">' + sesc(String(s).toUpperCase()) + "</span>").join("") + "</span>";
+      }
+      function signalHTML(k, v, note) {
+        return '<div class="signal"><div class="sk"><span>' + k + "</span><b>" + v + '</b></div>'
+          + '<div class="sbar"><i style="width:' + Math.max(2, Math.min(100, v)) + '%"></i></div>'
+          + '<div class="sd">' + note + "</div></div>";
+      }
+      function sortedChamps(p) {
+        return (p.champions || []).slice().sort((a, b) => (b.games || 0) - (a.games || 0));
+      }
+      function planBullets(p, against) {
+        const champs = sortedChamps(p);
+        const top = champs[0] || null;
+        const form = p.form || {};
+        const l10 = form.last10 || { w: 0, l: 0 };
+        const pct10 = winPct(l10.w, l10.l);
+        const streak = streakInfo(form.streak);
+        const worstPool = champs.filter((c) => (c.games || 0) >= 3);
+        const worst = worstPool.length ? worstPool.slice().sort((a, b) => (a.winRate || 0) - (b.winRate || 0))[0] : null;
+        const mainRole = (p.mainRoles || [])[0] || null;
+        if (against) {
+          const out = [];
+          if (top) out.push("Take " + champDisplay(top.champion) + " away or answer it: " + top.games + " games at " + fmt(top.winRate || 0, 0) + "% in the window — it is the pick this file revolves around.");
+          if (streak && streak.win === false && streak.n >= 3) out.push("They are carrying a " + streak.text + " losing streak into this game — pressure them early; a bad first ten minutes tends to snowball.");
+          else if (pct10 >= 70) out.push("Form is hot (" + l10.w + "W – " + l10.l + "L over the last 10) — don't gift early skirmishes; make them earn the first move.");
+          else out.push("Recent form is " + l10.w + "W – " + l10.l + "L over the last 10 — a standard early plan holds up; no need to over-index on their lane.");
+          if (worst && top && worst !== top) out.push("If they fall off comfort, the drop is real: " + champDisplay(worst.champion) + " sits at " + fmt(worst.winRate || 0, 0) + "% over " + worst.games + " games in the window.");
+          return out.length ? out : ["Not enough games in the window to build a plan against this player yet."];
+        }
+        const out = [];
+        if (top) out.push("Play through the " + champDisplay(top.champion) + ": " + fmt(top.winRate || 0, 0) + "% over " + top.games + " games is the strongest signal in this file.");
+        if (pct10 >= 60) out.push("Form is live (" + l10.w + "/10 recent) — early resources and first rotations toward their lane are +EV.");
+        else if (pct10 <= 40 && (l10.w + l10.l) >= 5) out.push("Form is cold (" + l10.w + "/10 recent) — cover their lane early and don't build the game plan around them carrying.");
+        else out.push("Form is even (" + l10.w + "/10 recent) — standard resource split; let the matchup decide.");
+        if (mainRole) out.push("Most of their games are " + roleLabelOf(mainRole.role) + " (" + mainRole.pct + "% of the window) — expect them on-role and set up around that lane.");
+        return out;
+      }
+      let lastProfile = null;
+      function renderDossier(p) {
+        lastProfile = p;
+        const roleCols = { top: "#f59e0b", jungle: "#4ade80", mid: "#2dd9e8", adc: "#fb7185", support: "#c084fc" };
+        const champs = sortedChamps(p);
+        const top = champs[0] || null;
+        const form = p.form || {};
+        const l10 = form.last10 || { w: 0, l: 0 };
+        const l20 = form.last20 || l10;
+        const totals = p.totals || { games: 0, wins: 0, losses: 0, winRate: 0 };
+        const pct10 = winPct(l10.w, l10.l), pct20 = winPct(l20.w, l20.l);
+        const streak = streakInfo(form.streak);
+        const verdict = streak && streak.win === false && streak.n >= 3 ? { t: "Tilt watch", cls: "hot" }
+          : pct10 >= 70 ? { t: "In form", cls: "" }
+          : pct10 <= 30 && (l10.w + l10.l) >= 5 ? { t: "Cold streak", cls: "cold" } : { t: "Steady", cls: "" };
+        const roles = (p.mainRoles || []).filter((r) => r && r.pct > 0);
+        const rolesPct = roles.reduce((s, r) => s + (r.pct || 0), 0);
+        const roleSegs = roles.map((r) => ({ role: String(r.role || "").toLowerCase(), pct: r.pct }));
+        if (rolesPct > 0 && rolesPct < 100) roleSegs.push({ role: "other", pct: 100 - rolesPct });
+        const mastery = (p.mastery || []).slice().sort((a, b) => (b.points || 0) - (a.points || 0));
+        const faceId = top ? champIdOf(top.champion) : null;
+        let fetchedTxt = "";
+        if (p.fetchedAt) {
+          const d = new Date(p.fetchedAt);
+          fetchedTxt = isNaN(d.getTime()) ? String(p.fetchedAt) : d.toLocaleString();
+        }
+        const tags = [];
+        if (streak) tags.push({ t: "Current streak: " + streak.text, cls: streak.win === false && streak.n >= 3 ? "hot" : "" });
+        if (top && totals.games) tags.push({ t: champDisplay(top.champion) + " is " + Math.round((top.games || 0) / totals.games * 100) + "% of games in the window", cls: "" });
+        const proven = champs.filter((c) => (c.games || 0) >= 5);
+        if (proven.length) {
+          const best = proven.slice().sort((a, b) => (b.winRate || 0) - (a.winRate || 0))[0];
+          tags.push({ t: "Best proven WR: " + champDisplay(best.champion) + " at " + fmt(best.winRate || 0, 0) + "% (" + best.games + " games)", cls: "" });
+        }
+        if (roles.length) tags.push({ t: "Main role: " + roleLabelOf(roles[0].role) + " — " + roles[0].pct + "% of games", cls: "" });
+        $("#scoutResult").innerHTML =
+          '<div class="dos-head">' + (faceId ? icon(faceId) : "")
+          + '<div><div class="dos-id">' + sesc(p.name) + '<span class="tag">#' + sesc(p.tag) + '</span><span class="rank-chip">' + sesc(rankText(p.rank)) + "</span></div>"
+          + '<div class="dos-meta">' + sesc(platformLabel(p.platform))
+          + (p.rank ? " · RANKED " + (p.rank.wins || 0) + "W – " + (p.rank.losses || 0) + "L" : " · NO RANKED RECORD")
+          + (p.windowGames != null ? " · WINDOW: LAST " + p.windowGames + " GAMES" : "")
+          + (p.cachedMatches != null ? " · " + p.cachedMatches + " CACHED" : "")
+          + (fetchedTxt ? " · FETCHED " + sesc(fetchedTxt.toUpperCase()) : "") + "</div></div>"
+          + '<div class="dos-verdict"><div class="dv-k">Scout verdict</div><div class="dv-v ' + verdict.cls + '">' + verdict.t + "</div></div></div>"
+          + '<div class="signal-row">'
+          + signalHTML("Recent form", pct10, l10.w + "W – " + l10.l + "L in the last 10" + (streak ? " · streak " + sesc(streak.text) : ""))
+          + signalHTML("Last 20", pct20, l20.w + "W – " + l20.l + "L in the last 20")
+          + signalHTML("Overall win rate", Math.round(totals.winRate || 0), totals.wins + "W – " + totals.losses + "L across " + totals.games + " games in the window")
+          + (top ? signalHTML("Top comfort WR", Math.round(top.winRate || 0), sesc(champDisplay(top.champion)) + " — " + top.games + " games in the window") : signalHTML("Top comfort WR", 0, "No champion games in the window"))
+          + "</div>"
+          + '<div class="dos-grid">'
+          + '<div class="dos-card"><h3>Champion comfort <span class="sub">— where the reps are</span></h3>'
+          + (champs.length ? champs.map((c) => {
+              const grade = comfortGrade(c.games || 0, c.winRate || 0);
+              const kd = c.kda || {};
+              return '<div class="crow">' + champIconHTML(c.champion)
+                + '<div><div class="cn">' + sesc(champDisplay(c.champion)) + '</div><div class="cm">' + (c.games || 0) + " games · " + (c.wins || 0) + "W – " + (c.losses || 0) + "L</div>"
+                + '<div class="cm2">KDA ' + fmt(c.kdaRatio || 0, 2) + " (" + fmt(kd.k || 0) + "/" + fmt(kd.d || 0) + "/" + fmt(kd.a || 0) + ") · " + fmt(c.csPerMin || 0) + " CS/min · " + fmt(c.dmgSharePct || 0, 0) + "% dmg"
+                + (c.lastPlayedDaysAgo != null ? " · last played " + lastPlayedLabel(c.lastPlayedDaysAgo) : "") + "</div></div>"
+                + '<div class="cw2"><span class="wr ' + wrClass(c.winRate || 0) + '">' + fmt(c.winRate || 0, 0) + '%</span><span class="gr gr-' + grade + '">' + grade + "</span></div></div>";
+            }).join("") : '<div class="formline">No champion games recorded in this window.</div>')
+          + (roleSegs.length ? '<h3 style="margin-top:16px">Role tendency</h3>'
+            + '<div class="rolebar">' + roleSegs.map((r) => '<i style="width:' + r.pct + "%;background:" + (roleCols[r.role] || "#5b7183") + '"></i>').join("") + "</div>"
+            + '<div class="rolebar-legend">' + roleSegs.map((r) => "<span><b>" + (r.role === "other" ? "Flex" : sesc(roleLabelOf(r.role))) + "</b> " + r.pct + "%</span>").join("") + "</div>" : "")
+          + '<h3 style="margin-top:16px">Window totals</h3>'
+          + '<div class="formline"><b>' + totals.wins + "W – " + totals.losses + "L</b> across " + totals.games + " games (" + fmt(totals.winRate || 0, 0) + "%)"
+          + (p.windowGames != null ? " · window size " + p.windowGames : "") + (p.cachedMatches != null ? " · " + p.cachedMatches + " matches cached" : "") + "</div>"
+          + (tags.length ? '<h3 style="margin-top:16px">Reads</h3><div class="tagrow">'
+            + tags.map((t) => '<span class="ptag ' + t.cls + '">' + sesc(t.t) + "</span>").join("") + "</div>" : "")
+          + "</div>"
+          + '<div class="dos-card"><h3>Recent form <span class="sub">— most recent first</span></h3>'
+          + formDotsSeqHTML(form.sequence)
+          + '<div class="formline">Last 10: <b>' + l10.w + "W – " + l10.l + "L</b> (" + pct10 + "%) · Last 20: <b>" + l20.w + "W – " + l20.l + "L</b> (" + pct20 + "%)"
+          + (streak ? " · Streak <b>" + sesc(streak.text) + "</b>" : "") + "</div>"
+          + '<h3 style="margin-top:16px">Mastery bench <span class="sub">— all-time champion mastery</span></h3>'
+          + (mastery.length ? mastery.map((m) => '<div class="crow">' + champIconHTML(m.champion)
+              + '<div><div class="cn">' + sesc(champDisplay(m.champion)) + '</div><div class="cm">Mastery level ' + (m.level != null ? m.level : "—") + "</div></div>"
+              + '<div class="cw2"><span class="wr">' + Number(m.points || 0).toLocaleString() + '</span><span class="gr" style="color:var(--ink-soft)">points</span></div></div>').join("")
+            : '<div class="formline">No mastery data returned for this player.</div>')
+          + "</div></div>"
+          + '<div class="plan-grid">'
+          + '<div class="plan-card against"><h3>Playing against them</h3><ul>'
+          + planBullets(p, true).map((b) => "<li>" + sesc(b) + "</li>").join("") + "</ul></div>"
+          + '<div class="plan-card with"><h3>Playing with them</h3><ul>'
+          + planBullets(p, false).map((b) => "<li>" + sesc(b) + "</li>").join("") + "</ul></div>"
+          + "</div>"
+          + '<div class="dos-actions"><button type="button" class="btn ghost" id="copyReport">Copy scouting summary</button>'
+          + '<span class="copy-status" id="copyStatus" aria-live="polite"></span></div>';
+        const cp = $("#copyReport");
+        if (cp) cp.addEventListener("click", copyScoutSummary);
+      }
+      function scoutSummaryText(p) {
+        const champs = sortedChamps(p);
+        const form = p.form || {};
+        const l10 = form.last10 || { w: 0, l: 0 };
+        const totals = p.totals || { games: 0, wins: 0, losses: 0, winRate: 0 };
+        const lines = [
+          "SCOUT — " + p.name + "#" + p.tag + " (" + platformLabel(p.platform) + ")",
+          "Rank: " + rankText(p.rank) + (p.rank ? " (" + (p.rank.wins || 0) + "W – " + (p.rank.losses || 0) + "L)" : ""),
+          "Roles: " + (p.mainRoles || []).map((r) => roleLabelOf(r.role) + " " + r.pct + "%").join(", "),
+          "Form: last 10 " + l10.w + "W-" + l10.l + "L" + (form.streak ? ", streak " + form.streak : "") + " · window " + totals.wins + "W-" + totals.losses + "L (" + fmt(totals.winRate || 0, 0) + "%)",
+          "Comfort pool: " + champs.map((c) => champDisplay(c.champion) + " " + fmt(c.winRate || 0, 0) + "% over " + c.games + ", KDA " + fmt(c.kdaRatio || 0, 2) + ", " + fmt(c.csPerMin || 0) + " CS/min, " + fmt(c.dmgSharePct || 0, 0) + "% dmg, last played " + lastPlayedLabel(c.lastPlayedDaysAgo)).join("; "),
+          "Mastery: " + (p.mastery || []).map((m) => champDisplay(m.champion) + " " + Number(m.points || 0).toLocaleString() + " pts (lvl " + (m.level != null ? m.level : "—") + ")").join("; "),
+          "Against: " + planBullets(p, true).join(" "),
+          "With: " + planBullets(p, false).join(" ")
+        ];
+        return lines.join("\n");
+      }
+      function copyScoutSummary() {
+        if (!lastProfile) return;
+        const st = $("#copyStatus");
+        const done = () => { if (st) st.textContent = "Summary copied — paste it into your draft notes or team chat."; };
+        const text = scoutSummaryText(lastProfile);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, () => { if (st) st.textContent = "Copy was blocked by the browser — the dossier above has everything."; });
+        } else if (st) { st.textContent = "Copy isn't available here — the dossier above has everything."; }
+      }
+      /* ----- running a lookup (manual, live teammate, or Scout me) ----- */
+      let lookupSeq = 0;
+      async function scoutAndRender(params) {
+        const err = $("#lookupError");
+        const box = $("#scoutResult");
+        const my = ++lookupSeq;
+        if (err) err.hidden = true;
+        box.innerHTML = '<div class="intel-empty">SCOUTING — pulling the match history…</div>';
+        try {
+          const p = await fetchProfile(params);
+          if (my !== lookupSeq) return;
+          renderDossier(p);
+        } catch (e) {
+          if (my !== lookupSeq) return;
+          box.innerHTML = '<div class="intel-empty">NO DOSSIER OPEN — enter a Riot ID above to pull a player\'s file.</div>';
+          if (err) { err.hidden = false; err.textContent = lookupErrorMessage(e && e.message); }
+        }
+      }
+      function scoutPlayerRef(ref, errEl) {
+        // A lobby teammate / the local player: prefer the puuid, fall back
+        // to name + tag, and if neither exists there is nothing real to
+        // fetch — say so in the not-configured style rather than guessing.
+        if (ref && ref.puuid) { scoutAndRender({ puuid: ref.puuid }); return; }
+        if (ref && ref.name && ref.tag) { scoutAndRender({ name: ref.name, tag: ref.tag, platform: $("#scoutRegion").value }); return; }
+        const e = errEl || $("#lookupError");
+        if (e) { e.hidden = false; e.textContent = lookupErrorMessage("not_configured"); }
+      }
+      function runLookup() {
+        const err = $("#lookupError");
+        const parsed = parseRiotId($("#scoutId").value);
+        if (!parsed) {
+          err.hidden = false;
+          err.textContent = "That doesn't read as a full Riot ID — it needs the game name and the tag after a #, like GameName#TAG. Names alone aren't unique, so the tag is required.";
+          return;
+        }
+        scoutAndRender({ name: parsed.name, tag: parsed.tag, platform: $("#scoutRegion").value });
+      }
+      /* ----- Live lobby (CTRLWARD_STATE from the desktop app) ----- */
+      function currentLobby() {
+        const st = window.CTRLWARD_STATE;
+        return st && st.lobby ? st.lobby : null;
+      }
+      function renderLiveLobby() {
+        const box = $("#liveLobby");
+        if (!box) return;
+        const actions = $("#liveActions");
+        const lobby = currentLobby();
+        if (!lobby || !lobby.inChampSelect || !Array.isArray(lobby.teammates) || !lobby.teammates.length) {
+          box.innerHTML = '<div class="intel-empty">No live lobby — enter champ select in the desktop app, or look a player up above.</div>';
+          if (actions) actions.hidden = true;
+          return;
+        }
+        box.innerHTML = '<div class="lobby-cards live-cards">' + lobby.teammates.map((t, i) => {
+          const champId = t.champion ? champIdOf(t.champion) : null;
+          const meta = [
+            t.role ? roleLabelOf(t.role).toUpperCase() : "",
+            t.champion ? "ON " + champDisplay(t.champion).toUpperCase() : "NO LOCK YET"
+          ].filter(Boolean).join(" · ");
+          return '<button type="button" class="p-card" data-live-idx="' + i + '">'
+            + '<span class="pc-top">' + (champId ? icon(champId) : "")
+            + '<span><span class="pc-id">' + sesc(t.name || "Unknown player") + (t.tag ? '<span class="tag">#' + sesc(t.tag) + "</span>" : "") + (t.isSelf ? '<span class="self-tag">You</span>' : "") + "</span>"
+            + '<span class="pc-meta" style="display:block">' + sesc(meta) + "</span></span>"
+            + '<span class="pc-open-inline">Scout →</span></span></button>';
+        }).join("") + "</div>";
+        box.querySelectorAll("[data-live-idx]").forEach((b) =>
+          b.addEventListener("click", () => {
+            const t = lobby.teammates[parseInt(b.dataset.liveIdx, 10)];
+            setScoutMode("lookup");
+            scoutPlayerRef(t, $("#liveError"));
+            $("#viewScout").scrollIntoView({ block: "start" });
+          }));
+        if (actions) {
+          actions.hidden = !lobby.me;
+          const meBtn = $("#liveScoutMe");
+          if (meBtn && lobby.me) {
+            meBtn.onclick = () => {
+              setScoutMode("lookup");
+              scoutPlayerRef(lobby.me, $("#liveError"));
+              $("#viewScout").scrollIntoView({ block: "start" });
+            };
+          }
+        }
+      }
+      /* ----- Manual lobby (secondary fallback: typed / pasted rows) ----- */
+      function champOptionsHTML() {
+        return '<option value="">No champion locked yet</option>' + Object.keys(DATA.champs)
+          .sort((a, b) => name(a).localeCompare(name(b)))
+          .map((id) => '<option value="' + id + '">' + esc(name(id)) + "</option>").join("");
+      }
+      function buildLobbyRows() {
+        const box = $("#lobbyRows");
+        if (!box) return;
+        const opts = champOptionsHTML();
+        const roleOpts = '<option value="">Role — auto</option>' + ROLE_ORDER.map((r) => '<option value="' + r + '">' + ROLE_LABEL[r] + "</option>").join("");
+        box.innerHTML = [1, 2, 3, 4, 5].map((n) =>
+          '<div class="lobby-row"><span class="lobby-slot">Slot ' + n + (n === 1 ? " · You" : "") + "</span>"
+          + '<input type="text" class="lobby-id" placeholder="' + (n === 1 ? "Your Riot ID — Name#TAG" : "Teammate Riot ID — Name#TAG") + '" autocomplete="off" spellcheck="false" aria-label="Riot ID for lobby slot ' + n + '" />'
+          + '<select class="lobby-role" aria-label="Role for lobby slot ' + n + '">' + roleOpts + "</select>"
+          + '<select class="lobby-champ" aria-label="Locked or hovered champion for slot ' + n + '">' + opts + "</select></div>").join("");
+      }
+      function lobbyCardVerdict(p, lockedChamp) {
+        const form = p.form || {};
+        const streak = streakInfo(form.streak);
+        if (streak && streak.win === false && streak.n >= 3) return { t: "Tilt watch", cls: "hot" };
+        const locked = lockedChamp ? (p.champions || []).find((c) => champIdOf(c.champion) === lockedChamp) : null;
+        if (locked && comfortGrade(locked.games || 0, locked.winRate || 0) === "Signature") return { t: "Comfort threat", cls: "" };
+        if (locked && (locked.games || 0) < 4) return { t: "Off comfort", cls: "cold" };
+        const l10 = form.last10 || { w: 0, l: 0 };
+        const pct10 = winPct(l10.w, l10.l);
+        if (pct10 >= 70) return { t: "In form", cls: "" };
+        if (pct10 <= 30 && (l10.w + l10.l) >= 5) return { t: "Cold streak", cls: "cold" };
+        return { t: "Steady", cls: "" };
+      }
+      async function scoutLobby() {
+        const err = $("#lobbyError");
+        const result = $("#lobbyResult");
+        const rows = [...document.querySelectorAll(".lobby-row")];
+        const entriesIn = [];
+        const bad = [];
+        rows.forEach((row, i) => {
+          const idv = row.querySelector(".lobby-id").value.trim();
+          if (!idv) return;
+          const parsed = parseRiotId(idv);
+          if (!parsed) { bad.push("Slot " + (i + 1)); return; }
+          entriesIn.push({ parsed, champId: row.querySelector(".lobby-champ").value, slotRole: row.querySelector(".lobby-role").value });
+        });
+        if (bad.length) {
+          err.hidden = false;
+          err.textContent = "Couldn't read the Riot ID in " + bad.join(", ") + " — a full ID is game name and tag, like GameName#TAG.";
+          return;
+        }
+        if (!entriesIn.length) {
+          err.hidden = false;
+          err.textContent = "Add at least one Riot ID to scout this lobby.";
+          return;
+        }
+        err.hidden = true;
+        result.innerHTML = '<div class="intel-empty">SCOUTING LOBBY — pulling each player\'s match history…</div>';
+        const platform = $("#scoutRegion").value;
+        const settled = await Promise.all(entriesIn.map(async (en) => {
+          try {
+            const p = await fetchProfile({ name: en.parsed.name, tag: en.parsed.tag, platform });
+            return { en, p };
+          } catch (e) { return { en, error: e }; }
+        }));
+        const ok = settled.filter((s) => s.p);
+        const failed = settled.filter((s) => s.error);
+        if (!ok.length) {
+          result.innerHTML = "";
+          err.hidden = false;
+          err.textContent = lookupErrorMessage(failed[0].error && failed[0].error.message);
+          return;
+        }
+        if (failed.length) {
+          err.hidden = false;
+          err.textContent = "Couldn't scout " + failed.map((s) => s.en.parsed.name + "#" + s.en.parsed.tag).join(", ") + ": " + lookupErrorMessage(failed[0].error && failed[0].error.message);
+        }
+        const cards = ok.map((s, idx) => {
+          const p = s.p, en = s.en, v = lobbyCardVerdict(p, en.champId);
+          const champs = sortedChamps(p);
+          const top = champs[0] || null;
+          const locked = en.champId ? (p.champions || []).find((c) => champIdOf(c.champion) === en.champId) : null;
+          const face = en.champId || (top ? champIdOf(top.champion) : null);
+          const totals = p.totals || { games: 0, wins: 0, losses: 0, winRate: 0 };
+          const form = p.form || {};
+          const streak = streakInfo(form.streak);
+          const mainRole = (p.mainRoles || [])[0] || null;
+          const lockLine = locked
+            ? "On <b>" + sesc(name(en.champId)) + "</b> — " + comfortGrade(locked.games || 0, locked.winRate || 0).toLowerCase() + " pick, " + fmt(locked.winRate || 0, 0) + "% over " + locked.games + " games · KDA " + fmt(locked.kdaRatio || 0, 2) + " · " + fmt(locked.csPerMin || 0) + " CS/min · " + fmt(locked.dmgSharePct || 0, 0) + "% dmg"
+            : en.champId
+              ? "On <b>" + sesc(name(en.champId)) + "</b> — no games on it in this window; comfort is <b>" + (top ? sesc(champDisplay(top.champion)) : "—") + "</b>" + (top ? " (" + fmt(top.winRate || 0, 0) + "% over " + top.games + ")" : "")
+              : "No lock yet — comfort is <b>" + (top ? sesc(champDisplay(top.champion)) : "—") + "</b>" + (top ? " (" + fmt(top.winRate || 0, 0) + "% over " + top.games + ")" : "");
+          return '<button type="button" class="p-card" data-manual-idx="' + idx + '">'
+            + '<span class="pc-top">' + (face ? icon(face) : "")
+            + '<span><span class="pc-id">' + sesc(p.name) + '<span class="tag">#' + sesc(p.tag) + '</span></span>'
+            + '<span class="pc-meta" style="display:block">' + sesc(rankText(p.rank).toUpperCase()) + " · " + (en.slotRole ? sesc(ROLE_LABEL[en.slotRole].toUpperCase()) + " (SET)" : mainRole ? "MAIN " + sesc(roleLabelOf(mainRole.role).toUpperCase()) : "") + "</span></span>"
+            + '<span class="pc-verdict ' + v.cls + '">' + v.t + "</span></span>"
+            + formDotsSeqHTML((form.sequence || []).slice(0, 10))
+            + '<span class="pc-line" style="display:block">' + lockLine + "</span>"
+            + '<span class="pc-line" style="display:block">Window: <b>' + totals.wins + "W – " + totals.losses + "L</b> (" + fmt(totals.winRate || 0, 0) + "%)" + (streak ? ' · streak <b>' + sesc(streak.text) + "</b>" : "") + "</span>"
+            + '<span class="pc-open">Open full dossier →</span></button>';
+        }).join("");
+        // Team-level read, aggregated from the real profiles above.
+        const avgWr = ok.reduce((s, e) => s + ((e.p.totals || {}).winRate || 0), 0) / ok.length;
+        const avgForm = ok.reduce((s, e) => { const f = (e.p.form || {}).last10 || { w: 0, l: 0 }; return s + winPct(f.w, f.l); }, 0) / ok.length;
+        const tilt = ok.filter((e) => { const st = streakInfo((e.p.form || {}).streak); return st && st.win === false && st.n >= 3; });
+        const withForm = ok.map((e) => { const f = (e.p.form || {}).last10 || { w: 0, l: 0 }; return { e, pct: winPct(f.w, f.l), f }; });
+        const playThrough = withForm.slice().sort((a, b) => b.pct - a.pct)[0];
+        const coldest = withForm.slice().sort((a, b) => a.pct - b.pct)[0];
+        const lockedIds = ok.filter((e) => e.en.champId).map((e) => e.en.champId);
+        const dmgCount = { AD: 0, AP: 0, Mixed: 0 };
+        for (const id of lockedIds) dmgCount[dmgOf(id)]++;
+        const hasFront = lockedIds.some((id) => (FRONTLINE_ARCH[DATA.champs[id].arch] || 0) >= 1);
+        const bullets = [];
+        if (playThrough) bullets.push("Play through " + playThrough.e.p.name + " — best recent form in the lobby at " + playThrough.f.w + "/10" + (sortedChamps(playThrough.e.p)[0] ? ", with comfort on " + champDisplay(sortedChamps(playThrough.e.p)[0].champion) : "") + ".");
+        if (tilt.length) bullets.push("Cover " + tilt.map((e) => e.p.name).join(", ") + " — carrying a losing streak of 3+ into this game; early help and no flame keeps the game winnable.");
+        else if (coldest && coldest.pct <= 40) bullets.push(coldest.e.p.name + " is the coldest file here (" + coldest.f.w + "/10 recent) — don't build the early plan around their lane.");
+        if (lockedIds.length >= 2 && dmgCount.AP === 0) bullets.push("Locked picks are all physical damage so far — an AP pick in the remaining slots keeps the comp honest.");
+        else if (lockedIds.length >= 2 && dmgCount.AD === 0) bullets.push("Locked picks are all magic damage so far — an AD pick in the remaining slots keeps the comp honest.");
+        else if (lockedIds.length >= 3) bullets.push("Damage is mixed across the locked picks (" + dmgCount.AD + " AD · " + dmgCount.AP + " AP · " + dmgCount.Mixed + " mixed) — no free itemization for the enemy.");
+        if (lockedIds.length >= 2 && !hasFront) bullets.push("No true frontline among the locked picks — a tank or juggernaut in the open slots, or play a pick-and-poke game instead of front-to-back fights.");
+        if (avgForm >= 60) bullets.push("Lobby form is hot overall (" + fmt(avgForm, 0) + "% over everyone's last 10) — take early skirmishes; this team is winning its coin flips right now.");
+        result.innerHTML = '<div class="lobby-cards">' + cards + "</div>"
+          + '<div class="teamread"><h3>The lobby read</h3>'
+          + '<div class="tr-stats"><span>Players scouted <b>' + ok.length + "</b></span>"
+          + "<span>Avg window WR <b>" + fmt(avgWr, 0) + "%</b></span>"
+          + "<span>Avg last-10 form <b>" + fmt(avgForm, 0) + "%</b></span>"
+          + "<span>Tilt watch <b>" + tilt.length + "</b></span>"
+          + "<span>Locked <b>" + lockedIds.length + "</b></span></div>"
+          + "<ul>" + bullets.map((b) => "<li>" + sesc(b) + "</li>").join("") + "</ul></div>";
+        result.querySelectorAll("[data-manual-idx]").forEach((b) =>
+          b.addEventListener("click", () => {
+            const s = ok[parseInt(b.dataset.manualIdx, 10)];
+            if (!s) return;
+            setScoutMode("lookup");
+            renderDossier(s.p);
+            $("#viewScout").scrollIntoView({ block: "start" });
+          }));
+      }
+      /* ----- Scout me (manual Slot 1) + lobby import (bridge paste / link) ----- */
+      function scoutMe() {
+        const err = $("#lobbyError");
+        const first = document.querySelector(".lobby-row .lobby-id");
+        const idv = first ? first.value.trim() : "";
+        const parsed = parseRiotId(idv);
+        if (!parsed) {
+          err.hidden = false;
+          err.textContent = "Scout me needs your own Riot ID in Slot 1 — that's the slot the lobby read treats as you.";
+          if (first) first.focus();
+          return;
+        }
+        err.hidden = true;
+        setScoutMode("lookup");
+        $("#scoutId").value = idv;
+        scoutAndRender({ name: parsed.name, tag: parsed.tag, platform: $("#scoutRegion").value });
+        $("#viewScout").scrollIntoView({ block: "start" });
+      }
+      const LOBBY_ROLE_ALIASES = { top: "top", jungle: "jungle", jg: "jungle", mid: "mid", middle: "mid", adc: "adc", bottom: "adc", bot: "adc", support: "support", sup: "support" };
+      function fillLobbyRows(list) {
+        const rows = document.querySelectorAll(".lobby-row");
+        let n = 0;
+        list.slice(0, 5).forEach((en, i) => {
+          const row = rows[i]; if (!row) return;
+          row.querySelector(".lobby-id").value = en.id || "";
+          const champSel = row.querySelector(".lobby-champ");
+          champSel.value = en.champ && DATA.champs[en.champ] ? en.champ : "";
+          const roleSel = row.querySelector(".lobby-role");
+          if (roleSel) roleSel.value = en.role || "";
+          if (en.id) n++;
+        });
+        return n;
+      }
+      function parseLobbyText(text) {
+        const t = (text || "").trim();
+        if (!t) return null;
+        let qs = t;
+        const qi = qs.indexOf("?");
+        if (qi >= 0) qs = qs.slice(qi + 1);
+        if (qs.indexOf("scoutLobby=") >= 0) {
+          const v = new URLSearchParams(qs).get("scoutLobby");
+          if (v) {
+            return v.split(",").map((part) => {
+              const seg = part.split(":").map((s) => s.trim());
+              return { id: seg[0] || "", champ: seg[1] ? resolveChamp(seg[1]) : "", role: seg[2] ? (LOBBY_ROLE_ALIASES[seg[2].toLowerCase()] || "") : "" };
+            }).filter((en) => en.id);
+          }
+        }
+        const out = [];
+        for (const line of t.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)) {
+          const parts = line.split(/[,|;]/).map((s) => s.trim());
+          if (!parts[0] || !parseRiotId(parts[0])) continue;
+          out.push({ id: parts[0], champ: parts[1] ? resolveChamp(parts[1]) : "", role: parts[2] ? (LOBBY_ROLE_ALIASES[parts[2].toLowerCase()] || "") : "" });
+        }
+        return out.length ? out : null;
+      }
+      function loadLobbyFromPaste() {
+        const status = $("#lobbyPasteStatus");
+        const parsed = parseLobbyText($("#lobbyPaste").value);
+        if (!parsed || !parsed.length) {
+          if (status) { status.className = "lobby-import-status err"; status.textContent = "Couldn't read that — one player per line: Name#TAG, Champion, Role (champion and role optional), or a bridge link carrying scoutLobby=…"; }
+          return;
+        }
+        const n = fillLobbyRows(parsed);
+        if (status) { status.className = "lobby-import-status"; status.textContent = "Loaded " + n + " player(s) into the lobby slots."; }
+        scoutLobby();
+      }
+      function lobbyFromURL() {
+        const p = new URLSearchParams(location.search);
+        const solo = p.get("scout");
+        if (p.has("scoutLobby")) {
+          const parsed = parseLobbyText(location.search);
+          if (parsed && parsed.length) {
+            setView("scout"); setScoutMode("lobby");
+            const manual = document.querySelector(".lobby-manual");
+            if (manual) manual.open = true;
+            fillLobbyRows(parsed);
+            scoutLobby();
+          }
+        }
+        if (solo) {
+          setView("scout"); setScoutMode("lookup");
+          $("#scoutId").value = solo;
+          runLookup();
+        }
+      }
+      /* ----- Tabs & modes ----- */
+      function setView(view) {
+        const scout = view === "scout";
+        document.body.dataset.view = view;
+        $("#viewRankings").hidden = scout;
+        $("#viewScout").hidden = !scout;
+        $("#tabRankings").setAttribute("aria-selected", String(!scout));
+        $("#tabScout").setAttribute("aria-selected", String(scout));
+      }
+      function setScoutMode(mode) {
+        const lobby = mode === "lobby";
+        $("#paneLookup").hidden = lobby;
+        $("#paneLobby").hidden = !lobby;
+        $("#modeLookup").setAttribute("aria-pressed", String(!lobby));
+        $("#modeLobby").setAttribute("aria-pressed", String(lobby));
+      }
+      function initScout() {
+        $("#tabRankings").addEventListener("click", () => setView("rankings"));
+        $("#tabScout").addEventListener("click", () => setView("scout"));
+        $("#modeLookup").addEventListener("click", () => setScoutMode("lookup"));
+        $("#modeLobby").addEventListener("click", () => setScoutMode("lobby"));
+        $("#lookupForm").addEventListener("submit", (e) => { e.preventDefault(); runLookup(); });
+        buildLobbyRows();
+        renderLiveLobby();
+        window.addEventListener("ctrlward-state", renderLiveLobby);
+        $("#lobbyScoutBtn").addEventListener("click", scoutLobby);
+        const meBtn = $("#lobbyScoutMe"); if (meBtn) meBtn.addEventListener("click", scoutMe);
+        const loadBtn = $("#lobbyLoad"); if (loadBtn) loadBtn.addEventListener("click", loadLobbyFromPaste);
+        const pasteBox = $("#lobbyPaste"); if (pasteBox) pasteBox.addEventListener("paste", () => setTimeout(loadLobbyFromPaste, 50));
+        lobbyFromURL();
+        $("#lobbyClear").addEventListener("click", () => {
+          document.querySelectorAll(".lobby-row").forEach((row) => {
+            row.querySelector(".lobby-id").value = "";
+            row.querySelector(".lobby-champ").value = "";
+            const rs = row.querySelector(".lobby-role"); if (rs) rs.value = "";
+          });
+          const lp = $("#lobbyPaste"); if (lp) lp.value = "";
+          const ls = $("#lobbyPasteStatus"); if (ls) ls.textContent = "";
+          $("#lobbyResult").innerHTML = "";
+          $("#lobbyError").hidden = true;
+        });
+      }
+
       /* ---------- CSV import ---------- */
       function resolveChamp(token) {
         const t = token.trim();
@@ -2342,6 +3273,7 @@
       });
 
       wireDraft();
+      initScout();
       renderRoles();
       fillEnemy();
       draftFromURL();

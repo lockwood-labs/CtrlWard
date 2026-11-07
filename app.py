@@ -37,6 +37,7 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
@@ -85,7 +86,7 @@ CACHE_DIR = os.path.join(app_dir(), "asset_cache")
 # or bake it into DEFAULT_UPDATE_REPO at build time. Empty = checks disabled.
 # ---------------------------------------------------------------------------
 
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.2.1"
 DEFAULT_UPDATE_REPO = "lockwood-labs/CtrlWard"
 
 def load_update_repo():
@@ -237,6 +238,87 @@ POSITION_TO_ROLE = {
     "bottom": "adc", "utility": "support", "": None, None: None,
 }
 
+# Lobby display roles (Scout tab): LCU assignedPosition -> short label.
+POSITION_TO_LOBBY_ROLE = {
+    "top": "Top", "jungle": "Jungle", "middle": "Mid",
+    "bottom": "ADC", "utility": "Support",
+}
+
+def lobby_role(assigned):
+    return POSITION_TO_LOBBY_ROLE.get((assigned or "").lower(), "")
+
+def _summoner_identity(obj):
+    """Best-effort {name, tag, puuid} from an LCU summoner object."""
+    obj = obj or {}
+    name = ""
+    for field in ("displayName", "gameName", "username", "name",
+                  "internalName"):
+        if obj.get(field):
+            name = obj[field]
+            break
+    return {"name": name, "tag": obj.get("tagLine") or None,
+            "puuid": obj.get("puuid") or None}
+
+# Summoner identities don't change mid-session; cache for the app's life.
+_SUMMONER_CACHE = {}
+_ME_CACHE = {"ok": False, "value": None}
+
+def resolve_summoner(creds, summoner_id):
+    """Resolve one summonerId to {name, tag, puuid} via the LCU,
+    cached per summonerId for the app's lifetime."""
+    if not summoner_id:
+        return {"name": "", "tag": None, "puuid": None}
+    if summoner_id in _SUMMONER_CACHE:
+        return _SUMMONER_CACHE[summoner_id]
+    try:
+        obj = lcu_get(creds[0], creds[1], creds[2],
+                      f"/lol-summoner/v1/summoners/{summoner_id}")
+        ident = _summoner_identity(obj)
+        _SUMMONER_CACHE[summoner_id] = ident
+        return ident
+    except Exception:
+        return {"name": "", "tag": None, "puuid": None}
+
+def fetch_current_summoner(creds):
+    """The local player's own {name, tag, puuid}, or None while the
+    client is unreachable. Cached once it succeeds; retried on later
+    polls until then."""
+    if _ME_CACHE["ok"]:
+        return _ME_CACHE["value"]
+    try:
+        obj = lcu_get(creds[0], creds[1], creds[2],
+                      "/lol-summoner/v1/current-summoner")
+        ident = _summoner_identity(obj)
+        if ident["name"] or ident["puuid"]:
+            _ME_CACHE.update({"ok": True, "value": ident})
+            return ident
+    except Exception:
+        pass
+    return None
+
+def build_lobby(session, champ_names, creds):
+    """Scout-tab lobby state from a champ-select session: the local
+    player's team with resolved identities, plus 'me'."""
+    local_cell = session.get("localPlayerCellId")
+    teammates = []
+    for member in session.get("myTeam", []) or []:
+        ident = resolve_summoner(creds, member.get("summonerId"))
+        champ_id = (member.get("championId")
+                    or member.get("championPickIntent") or 0)
+        teammates.append({
+            "name": ident["name"],
+            "tag": ident["tag"],
+            "puuid": ident["puuid"],
+            "role": lobby_role(member.get("assignedPosition")),
+            "champion": champ_names.get(champ_id, "") if champ_id else "",
+            "isSelf": member.get("cellId") == local_cell,
+        })
+    return {"inChampSelect": True, "teammates": teammates,
+            "me": fetch_current_summoner(creds)}
+
+def empty_lobby(me=None):
+    return {"inChampSelect": False, "teammates": [], "me": me}
+
 def _names(ids, champ_names):
     return [champ_names[i] for i in ids if i and i in champ_names]
 
@@ -323,6 +405,7 @@ STATE = {
     "params": "",             # tool-format draft params, "" when no draft
     "signature": "",          # hash of params, changes when the draft changes
     "draft": None,
+    "lobby": {"inChampSelect": False, "teammates": [], "me": None},
     "message": "Starting…",
     "app_version": APP_VERSION,
     "update": None,           # {version, url, tool_downloaded} when a newer release exists
@@ -426,6 +509,46 @@ def telemetry_post(path, payload):
             return 200 <= r.status < 300
     except Exception:
         return False
+
+# --- Scout-tab player lookup proxy ---
+#
+# The page asks THIS engine for a player lookup; the engine relays it
+# to the telemetry Worker's GET /lookup route with the report key.
+# The key never reaches the page — the page only ever sees the
+# Worker's JSON body, forwarded verbatim (error bodies included, so
+# the page renders one uniform shape). Demo mode serves no lookups.
+
+DEMO_MODE = {"on": False}  # set by main(); --demo disables lookups
+
+def lookup_proxy(query):
+    """Relay a lookup to the Worker. Returns response body bytes."""
+    if DEMO_MODE["on"] or not REPORT_CONFIG:
+        return json.dumps({"error": "not_configured"}).encode()
+    params = urllib.parse.parse_qs(query or "")
+    fwd = {}
+    for key in ("puuid", "name", "tag"):
+        values = params.get(key)
+        if values and values[0]:
+            fwd[key] = values[0]
+    fwd["platform"] = (params.get("platform") or [""])[0] or "na1"
+    url = (REPORT_CONFIG["endpoint"] + "/lookup?"
+           + urllib.parse.urlencode(fwd))
+    req = urllib.request.Request(url, headers={
+        "X-Report-Key": REPORT_CONFIG["report_key"],
+        "User-Agent": "CtrlWard/" + APP_VERSION})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            return r.read()
+    except urllib.error.HTTPError as exc:
+        try:
+            body = exc.read()
+            if body:
+                return body
+        except Exception:
+            pass
+        return json.dumps({"error": "lookup_unreachable"}).encode()
+    except Exception:
+        return json.dumps({"error": "lookup_unreachable"}).encode()
 
 # --- Top 3 snapshots: the page reports its current recommendations to
 # --- this local server; they are kept only if they describe the draft
@@ -690,13 +813,37 @@ DEMO_STAGES = [
     {5: 421, 0: 266, 6: 61, 1: 103, 7: 145, 3: 222},  # ally Jinx — full picture
 ]
 
+def _demo_lobby(session):
+    """Demo lobby for the Scout tab: the five demo teammates, with the
+    local player's cell as 'You' (no identities exist offline)."""
+    local_cell = session.get("localPlayerCellId")
+    teammates = []
+    ally_n = 0
+    for member in session.get("myTeam", []):
+        is_self = member.get("cellId") == local_cell
+        if not is_self:
+            ally_n += 1
+        champ_id = member.get("championId") or 0
+        teammates.append({
+            "name": "You" if is_self else f"Ally {ally_n}",
+            "tag": None,
+            "puuid": None,
+            "role": lobby_role(member.get("assignedPosition")),
+            "champion": DEMO_CHAMPIONS.get(champ_id, "") if champ_id else "",
+            "isSelf": is_self,
+        })
+    return {"inChampSelect": True, "teammates": teammates,
+            "me": {"name": "You", "tag": None, "puuid": None}}
+
 def demo_poller():
     set_state(connected=True, in_champ_select=True,
               message="Demo mode — simulated champ select")
     stage = 0
     while True:
-        draft = parse_session(_demo_session(DEMO_STAGES[stage]), DEMO_CHAMPIONS)
+        session = _demo_session(DEMO_STAGES[stage])
+        draft = parse_session(session, DEMO_CHAMPIONS)
         set_state(params=draft_params(draft), draft=draft,
+                  lobby=_demo_lobby(session),
                   in_champ_select=True, connected=True)
         print(f"[demo] stage {stage + 1}/{len(DEMO_STAGES)}: {json.dumps(draft)}")
         stage = min(stage + 1, len(DEMO_STAGES) - 1)
@@ -721,7 +868,8 @@ def real_poller(lockfile_arg):
                 creds = read_lockfile(lockfile_arg)
                 if creds is None:
                     set_state(connected=False, in_champ_select=False, params="",
-                              draft=None, message="Waiting for the League client…")
+                              draft=None, lobby=empty_lobby(),
+                              message="Waiting for the League client…")
                     time.sleep(3)
                     continue
                 print(f"League client found (LCU port {creds[1]}).")
@@ -739,7 +887,8 @@ def real_poller(lockfile_arg):
                 if params != get_state()["params"]:
                     print("Draft update:", json.dumps(draft))
                 set_state(connected=True, in_champ_select=True, params=params,
-                          draft=draft, message="Live — champ select in progress")
+                          draft=draft, lobby=build_lobby(session, champ_names, creds),
+                          message="Live — champ select in progress")
             else:
                 absent_polls += 1
                 if last_draft is not None and absent_polls >= 2:
@@ -751,10 +900,13 @@ def real_poller(lockfile_arg):
                 if st["in_champ_select"]:
                     print("Champ select ended.")
                 set_state(connected=True, in_champ_select=False, params="",
-                          draft=None, message="Connected — waiting for champ select…")
+                          draft=None,
+                          lobby=empty_lobby(fetch_current_summoner(creds)),
+                          message="Connected — waiting for champ select…")
         except Exception as exc:  # network hiccup, client restart, etc.
             creds = None
             set_state(connected=False, in_champ_select=False, params="", draft=None,
+                      lobby=empty_lobby(),
                       message=f"Reconnecting… ({exc.__class__.__name__})")
         time.sleep(2)
 
@@ -898,6 +1050,8 @@ LIVE_SCRIPT = """
   var lastSig = null;
   function tick(){
     fetch('/api/state').then(function(r){ return r.json(); }).then(function(s){
+      window.CTRLWARD_STATE = s;
+      try { window.dispatchEvent(new CustomEvent('ctrlward-state', {detail: s})); } catch(e) {}
       pill.textContent = s.in_champ_select ? '● LIVE — champ select'
         : (s.connected ? '○ Connected — waiting for champ select' : '○ Waiting for League client…');
       pill.style.borderColor = s.in_champ_select ? '#2ee6a8' : '#ff4655';
@@ -986,6 +1140,9 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/state":
                 body = json.dumps(get_state()).encode()
                 self._send(200, body, "application/json")
+            elif path == "/api/lookup":
+                self._send(200, lookup_proxy(parsed.query),
+                           "application/json")
             elif path == "/api/settings":
                 body = json.dumps({
                     "available": telemetry_available(),
@@ -1096,6 +1253,7 @@ def main():
     args = ap.parse_args()
 
     _LCU_ARGS["lockfile"] = args.lockfile
+    DEMO_MODE["on"] = bool(args.demo)
 
     Handler.tool_bytes = build_tool_bytes()
     icon_path = find_icon()
