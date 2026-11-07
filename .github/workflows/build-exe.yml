@@ -1,0 +1,68 @@
+name: Build CtrlWard.exe
+
+# Builds CtrlWard.exe on a real Windows runner so nobody has to run
+# build.bat by hand. Trigger it manually from the Actions tab.
+# The telemetry config is injected from the REPORT_CONFIG_JSON repo
+# secret at build time — it is never committed to this repository.
+# If the secret is missing, the build fails on purpose: a release exe
+# without the config would silently have no reporting toggle.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to attach CtrlWard.exe to (must already exist, draft is fine)"
+        required: true
+        default: "v1.2.0"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyInstaller
+        run: python -m pip install --upgrade pyinstaller
+
+      - name: Write telemetry config from secret
+        shell: pwsh
+        env:
+          REPORT_CONFIG_JSON: ${{ secrets.REPORT_CONFIG_JSON }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:REPORT_CONFIG_JSON)) {
+            throw "REPORT_CONFIG_JSON secret is not set — refusing to build a config-less release exe."
+          }
+          Set-Content -Path report_config.json -Value $env:REPORT_CONFIG_JSON -NoNewline -Encoding utf8
+
+      - name: Build CtrlWard.exe (same command as build.bat, minus its pauses)
+        shell: cmd
+        run: python -m PyInstaller --onefile --name CtrlWard --icon ctrl_ward.ico --add-data "tool.html;." --add-data "ctrl_ward.ico;." --add-data "report_config.json;." app.py
+
+      - name: Report exe size and hash
+        shell: pwsh
+        run: |
+          $f = Get-Item dist\CtrlWard.exe
+          $h = Get-FileHash dist\CtrlWard.exe -Algorithm SHA256
+          "CtrlWard.exe: $($f.Length) bytes" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          "SHA256: $($h.Hash)" | Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Upload exe as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CtrlWard-exe
+          path: dist/CtrlWard.exe
+
+      - name: Attach exe to the release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ inputs.release_tag }}" dist/CtrlWard.exe --clobber
