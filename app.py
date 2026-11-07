@@ -90,7 +90,7 @@ CACHE_DIR = os.path.join(app_dir(), "asset_cache")
 # or bake it into DEFAULT_UPDATE_REPO at build time. Empty = checks disabled.
 # ---------------------------------------------------------------------------
 
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 DEFAULT_UPDATE_REPO = "lockwood-labs/CtrlWard"
 
 def load_update_repo():
@@ -933,6 +933,10 @@ def real_poller(lockfile_arg):
 # already attempted and this process STILL runs the old build, the
 # staged update is dropped rather than retried on every launch (the
 # release-page banner remains as the manual fallback).
+# A release whose .exe is byte-identical to the running build (a
+# re-cut release of the same bits) is skipped before any download:
+# stage_exe_update compares the asset's digest with the running
+# exe's own sha256 (_running_exe_sha256).
 # Nothing here runs unless the app is a frozen Windows build; from
 # source, on other platforms, and in --demo-from-source, every entry
 # point below is a no-op. Nothing outside the exe's own folder and
@@ -970,6 +974,20 @@ def _sha256_file(path):
         for chunk in iter(lambda: f.read(1 << 20), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+def _running_exe_sha256():
+    """sha256 of the executable file this process is running from
+    (sys.executable in a frozen build), or "" when it cannot be
+    determined — from source, or if the file cannot be read. Used by
+    stage_exe_update to skip staging a release whose .exe is
+    byte-identical to the build already running (a re-cut release):
+    identical bits are not an update, whatever the tag says."""
+    try:
+        if not getattr(sys, "frozen", False):
+            return ""
+        return _sha256_file(sys.executable)
+    except Exception:
+        return ""
 
 def _asset_sha256(asset):
     """The sha256 GitHub recorded for a release asset (its "digest"
@@ -1032,6 +1050,10 @@ def stage_exe_update(version, asset, base=None, log=print):
     if already_attempted(version, base):
         log(f"Self-update: v{version} was already attempted once — "
             "not staging it again.")
+        return False
+    if _running_exe_sha256() == sha:
+        log(f"Self-update: v{version}'s release exe is identical to "
+            "the running build — nothing to stage.")
         return False
     target = _staged_exe(base)
     try:
@@ -1233,6 +1255,13 @@ def check_for_updates():
             set_state(appUpdate={"available": version})
             if stage_exe_update(version, exe_asset):
                 set_state(appUpdate={"pendingRestart": version})
+            elif (_asset_sha256(exe_asset)
+                    and _running_exe_sha256()
+                    == _asset_sha256(exe_asset)):
+                # The release .exe IS the running build (a re-cut
+                # release): nothing is actually available — withdraw
+                # the notice stage_exe_update just declined.
+                set_state(appUpdate=None)
     except Exception:
         pass  # offline or repo not set up yet — updates are best-effort
 

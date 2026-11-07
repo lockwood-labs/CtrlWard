@@ -626,7 +626,7 @@
       .app-tab.intel-tab[aria-selected="true"] { border-color: var(--teal); background: #0a2027; box-shadow: 0 0 0 1px var(--teal), 0 0 18px rgba(45, 217, 232, 0.25); }
       .app-tab.intel-tab[aria-selected="true"] .tab-t { color: var(--teal); }
       /* The Intel view re-tints the whole page: cyan grid, cyan glow. */
-      body[data-view="scout"], body[data-view="search"], body[data-view="lobby"] {
+      body[data-view="scout"], body[data-view="search"] {
         --bg-image: linear-gradient(rgba(45, 217, 232, 0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(45, 217, 232, 0.10) 1px, transparent 1px), repeating-linear-gradient(0deg, rgba(45,217,232,0.05) 0 1px, transparent 1px 3px), radial-gradient(760px 360px at 15% -40px, rgba(45, 217, 232, 0.16), transparent 60%);
       }
 
@@ -774,12 +774,40 @@
       .lobby-import-status.err { color: var(--bad); }
       .me-chip { border-color: var(--teal); color: var(--teal); background: #0a2027; }
       /* live lobby (fed by the desktop app's CTRLWARD_STATE) */
-      .live-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-      .live-head h3 { font-size: 16px; color: var(--teal); letter-spacing: 0.08em; }
-      .live-head .live-note { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--ink-soft); }
-      .lobby-cards.live-cards { margin-top: 10px; }
-      .p-card .pc-open-inline { margin-left: auto; flex: none; font-size: 13px; font-weight: 700; color: var(--teal); }
       .self-tag { font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #04222a; background: var(--teal); padding: 1px 6px; margin-left: 7px; vertical-align: 2px; }
+      /* ---------- Your lobby strip (inside Live Draft) ---------- */
+      .lobby-strip {
+        margin-top: 16px; background: #070d13; border: 1px solid #274b57;
+        padding: 12px 14px; position: relative;
+      }
+      .lobby-strip.is-live { border-color: var(--teal); box-shadow: 0 0 0 1px rgba(45,217,232,0.25), 0 10px 26px rgba(0,0,0,0.5); }
+      .lobby-strip.is-idle { background: var(--panel-2); border-style: dashed; box-shadow: none; }
+      .lobby-strip-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+      .lobby-strip-head h3 { font-size: 15px; color: var(--teal); letter-spacing: 0.08em; }
+      .lobby-strip-head .live-note { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--ink-soft); }
+      .lobby-strip.is-idle .lobby-strip-head h3 { color: var(--ink-soft); font-size: 13.5px; }
+      .lobby-strip-empty { margin: 8px 0 0; color: var(--ink-soft); font-family: ui-monospace, Menlo, monospace; font-size: 13.5px; }
+      .lobby-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+      .lobby-chip {
+        display: flex; align-items: center; gap: 9px; flex: 1 1 200px; min-width: 0;
+        background: var(--panel); border: 1px solid var(--line); padding: 7px 8px;
+      }
+      .lobby-chip.is-self { border-color: var(--teal); }
+      .lobby-chip img { width: 38px; height: 38px; border: 1px solid var(--line); flex: none; object-fit: cover; }
+      .lobby-chip .lc-main { min-width: 0; flex: 1 1 auto; }
+      .lobby-chip .lc-name { font-weight: 800; font-size: 14.5px; line-height: 1.15; overflow-wrap: anywhere; }
+      .lobby-chip .lc-name .tag { color: var(--teal); }
+      .lobby-chip .lc-meta { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-soft); letter-spacing: 0.03em; margin-top: 2px; overflow-wrap: anywhere; }
+      .lc-scout {
+        flex: none; border: 1px solid var(--teal); background: var(--teal); color: #04222a;
+        padding: 8px 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; font-size: 12.5px; cursor: pointer;
+        clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+      }
+      .lc-scout:hover, .lc-scout:focus-visible { background: #5ce6f2; }
+      .lobby-strip .lobby-manual { margin-top: 10px; }
+      .lobby-strip #liveActions { margin-top: 10px; }
+      .lobby-strip #liveActions[hidden] { display: none; }
+      @media (max-width: 560px) { .lobby-chip { flex: 1 1 100%; } .lc-scout { min-height: 44px; padding: 10px 14px; } }
       /* manual lobby entry: clearly the secondary path */
       .lobby-manual { margin-top: 18px; border: 1px dashed #274b57; padding: 12px 14px; }
       .lobby-manual summary { cursor: pointer; font-weight: 700; font-size: 14.5px; color: var(--ink-soft); letter-spacing: 0.03em; }
@@ -1031,13 +1059,46 @@
           <span class="tab-t">Player Search</span>
           <span class="tab-s">One Riot ID — profile and match history.</span>
         </button>
-        <button type="button" class="app-tab intel-tab" id="tabLobby" role="tab" aria-selected="false" aria-controls="viewLobby">
-          <span class="tab-t">Lobby</span>
-          <span class="tab-s">Scout your whole champ-select team at once.</span>
-        </button>
       </nav>
 
       <div id="viewDraft" hidden>
+      <div class="lobby-strip is-idle" id="lobbyStrip" aria-labelledby="lobbyStripTitle">
+        <div class="lobby-strip-head">
+          <h3 id="lobbyStripTitle">Your lobby</h3>
+          <span class="live-note">Fed by the desktop app while you're in champ select — tap Scout to open a teammate's full profile in Player Search.</span>
+        </div>
+        <div id="liveLobby" aria-live="polite">
+          <p class="lobby-strip-empty">Not in champion select — lobby scouting appears here during a live draft.</p>
+        </div>
+        <div class="btn-row" id="liveActions" hidden>
+          <button type="button" class="scout-btn" id="liveScoutMe">Scout me</button>
+        </div>
+        <p class="intel-error" id="liveError" hidden></p>
+        <details class="lobby-manual" id="lobbyManual">
+          <summary>Manual fallback — type or paste a lobby by hand</summary>
+          <p class="intel-lobby-intro">Only for when there's no live lobby to read. Your side of champ select
+          is the one you can see — enemy names stay hidden until the loading screen. Add your teammates (and
+          yourself), note what each of you has locked or is hovering, and scout the team as a unit.
+          <b>Slot 1 is you</b> — the Scout me button opens your own full dossier from it, in Player Search.
+          A champ-select bridge paste can also be loaded into the slots below.</p>
+          <div id="lobbyRows"></div>
+          <div class="btn-row">
+            <button type="button" class="scout-btn" id="lobbyScoutBtn">Scout this lobby</button>
+            <button type="button" class="btn ghost me-chip" id="lobbyScoutMe">Scout me (Slot 1)</button>
+            <button type="button" class="btn ghost" id="lobbyClear">Clear</button>
+          </div>
+          <div class="lobby-import">
+            <label for="lobbyPaste">Import a lobby (bridge paste — one player per line)</label>
+            <textarea id="lobbyPaste" placeholder="Name#TAG, Champion, Role — e.g. MoonlightJG#KR2, Kayn, Jungle. Champion and role are optional; a champ-select bridge link carrying scoutLobby=Name%23TAG:Kayn:Jungle,… works too."></textarea>
+            <div class="btn-row">
+              <button type="button" class="btn ghost" id="lobbyLoad">Load lobby</button>
+            </div>
+            <div class="lobby-import-status" id="lobbyPasteStatus" aria-live="polite"></div>
+          </div>
+        </details>
+        <p class="intel-error" id="lobbyError" hidden></p>
+        <div id="lobbyResult" aria-live="polite"></div>
+      </div>
       <div class="draft-panel" id="draftPanel">
         <div class="draft-head">
           <div>
@@ -1318,58 +1379,6 @@
             </div>
           </div>
 
-        </section>
-      </div>
-
-      <div id="viewLobby" hidden>
-        <section class="intel-shell" aria-labelledby="lobbyTitle">
-          <div class="intel-head">
-            <div>
-              <div class="intel-kicker">FILE // LOBBY SCOUT</div>
-              <h2 id="lobbyTitle">Read the <span class="cy">lobby.</span></h2>
-              <p class="intel-lede">Your whole champ-select team at once: who to play through, who needs cover,
-              and what your comp is missing. Tap a teammate to open their full profile in Player Search.</p>
-            </div>
-          </div>
-
-          <div id="paneLobby">
-            <div class="live-head">
-              <h3>Live lobby</h3>
-              <span class="live-note">Fed by the desktop app while you're in champ select — tap a teammate to scout them.</span>
-            </div>
-            <div id="liveLobby" aria-live="polite">
-              <div class="intel-empty">No live lobby — enter champ select in the desktop app, or look a player up above.</div>
-            </div>
-            <div class="btn-row" id="liveActions" hidden>
-              <button type="button" class="scout-btn" id="liveScoutMe">Scout me</button>
-            </div>
-            <p class="intel-error" id="liveError" hidden></p>
-
-            <details class="lobby-manual">
-              <summary>Manual fallback — type a lobby by hand</summary>
-              <p class="intel-lobby-intro">Only for when there's no live lobby to read. Your side of champ select
-              is the one you can see — enemy names stay hidden until the loading screen. Add your teammates (and
-              yourself), note what each of you has locked or is hovering, and scout the team as a unit.
-              <b>Slot 1 is you</b> — the Scout me button opens your own full dossier from it, in the same view a
-              lookup uses. A champ-select bridge paste can also be loaded into the slots below.</p>
-              <div id="lobbyRows"></div>
-              <div class="btn-row">
-                <button type="button" class="scout-btn" id="lobbyScoutBtn">Scout this lobby</button>
-                <button type="button" class="btn ghost me-chip" id="lobbyScoutMe">Scout me (Slot 1)</button>
-                <button type="button" class="btn ghost" id="lobbyClear">Clear</button>
-              </div>
-              <div class="lobby-import">
-                <label for="lobbyPaste">Import a lobby (bridge paste — one player per line)</label>
-                <textarea id="lobbyPaste" placeholder="Name#TAG, Champion, Role — e.g. MoonlightJG#KR2, Kayn, Jungle. Champion and role are optional; a champ-select bridge link carrying scoutLobby=Name%23TAG:Kayn:Jungle,… works too."></textarea>
-                <div class="btn-row">
-                  <button type="button" class="btn ghost" id="lobbyLoad">Load lobby</button>
-                </div>
-                <div class="lobby-import-status" id="lobbyPasteStatus" aria-live="polite"></div>
-              </div>
-            </details>
-            <p class="intel-error" id="lobbyError" hidden></p>
-            <div id="lobbyResult" aria-live="polite"></div>
-          </div>
         </section>
       </div>
 
@@ -3043,30 +3052,37 @@
         const box = $("#liveLobby");
         if (!box) return;
         const actions = $("#liveActions");
+        const strip = $("#lobbyStrip");
         const lobby = currentLobby();
         if (!lobby || !lobby.inChampSelect || !Array.isArray(lobby.teammates) || !lobby.teammates.length) {
-          box.innerHTML = '<div class="intel-empty">No live lobby — enter champ select in the desktop app, or look a player up above.</div>';
+          box.innerHTML = '<p class="lobby-strip-empty">Not in champion select — lobby scouting appears here during a live draft.</p>';
           if (actions) actions.hidden = true;
+          if (strip) { strip.classList.remove("is-live"); strip.classList.add("is-idle"); }
           return;
         }
-        box.innerHTML = '<div class="lobby-cards live-cards">' + lobby.teammates.map((t, i) => {
-          const champId = t.champion ? champIdOf(t.champion) : null;
+        if (strip) { strip.classList.add("is-live"); strip.classList.remove("is-idle"); }
+        box.innerHTML = '<div class="lobby-chips">' + lobby.teammates.map((t, i) => {
+          const champRaw = t.champion || t.hoveredChampion || t.lockedChampion || t.hover || "";
+          const champId = champRaw ? champIdOf(champRaw) : null;
+          const hovering = !!(t.hoveredChampion || t.hover || t.isHovering) && !t.champion && !t.lockedChampion;
+          const champTxt = champRaw ? (hovering ? "Hovering " + champDisplay(champRaw) : champDisplay(champRaw)) : "No lock yet";
           const meta = [
-            t.role ? roleLabelOf(t.role).toUpperCase() : "",
-            t.champion ? "ON " + champDisplay(t.champion).toUpperCase() : "NO LOCK YET"
+            t.role ? roleLabelOf(t.role) : "",
+            champTxt
           ].filter(Boolean).join(" · ");
-          return '<button type="button" class="p-card" data-live-idx="' + i + '">'
-            + '<span class="pc-top">' + (champId ? icon(champId) : "")
-            + '<span><span class="pc-id">' + sesc(t.name || "Unknown player") + (t.tag ? '<span class="tag">#' + sesc(t.tag) + "</span>" : "") + (t.isSelf ? '<span class="self-tag">You</span>' : "") + "</span>"
-            + '<span class="pc-meta" style="display:block">' + sesc(meta) + "</span></span>"
-            + '<span class="pc-open-inline">Scout →</span></span></button>';
+          return '<div class="lobby-chip' + (t.isSelf ? " is-self" : "") + '">'
+            + (champId ? icon(champId) : "")
+            + '<div class="lc-main"><div class="lc-name">' + sesc(t.name || "Unknown player") + (t.tag ? '<span class="tag">#' + sesc(t.tag) + "</span>" : "") + (t.isSelf ? '<span class="self-tag">You</span>' : "") + "</div>"
+            + '<div class="lc-meta">' + sesc(meta) + "</div></div>"
+            + '<button type="button" class="lc-scout" data-live-idx="' + i + '" aria-label="Scout ' + sesc(t.name || "teammate") + '">Scout</button></div>';
         }).join("") + "</div>";
         box.querySelectorAll("[data-live-idx]").forEach((b) =>
           b.addEventListener("click", () => {
             const t = lobby.teammates[parseInt(b.dataset.liveIdx, 10)];
+            if (!t) return;
             setScoutMode("lookup");
             scoutPlayerRef(t, $("#liveError"));
-            $("#viewSearch").scrollIntoView({ block: "start" });
+            const vs = $("#viewSearch"); if (vs) vs.scrollIntoView({ block: "start" });
           }));
         if (actions) {
           actions.hidden = !lobby.me;
@@ -3075,7 +3091,7 @@
             meBtn.onclick = () => {
               setScoutMode("lookup");
               scoutPlayerRef(lobby.me, $("#liveError"));
-              $("#viewSearch").scrollIntoView({ block: "start" });
+              const vs = $("#viewSearch"); if (vs) vs.scrollIntoView({ block: "start" });
             };
           }
         }
@@ -3289,50 +3305,51 @@
         if (p.has("scoutLobby")) {
           const parsed = parseLobbyText(location.search);
           if (parsed && parsed.length) {
-            setView("scout"); setScoutMode("lobby");
+            setView("draft");
             const manual = document.querySelector(".lobby-manual");
             if (manual) manual.open = true;
             fillLobbyRows(parsed);
             scoutLobby();
+            const strip = $("#lobbyStrip"); if (strip) strip.scrollIntoView({ block: "start" });
           }
         }
         if (solo) {
-          setView("scout"); setScoutMode("lookup");
+          setView("search");
           $("#scoutId").value = solo;
           runLookup();
         }
       }
       /* ----- Tabs & modes ----- */
       function setView(view) {
-        // Four contained views; "scout" stays as an alias for Player Search
-        // for the older call sites and bridge links.
-        const v = view === "scout" ? "search" : view;
+        // Three contained views; "scout" stays as an alias for Player Search
+        // and "lobby" as an alias for Live Draft (where the lobby strip now
+        // lives) for the older call sites and bridge links.
+        const v = view === "scout" ? "search" : view === "lobby" ? "draft" : view;
         document.body.dataset.view = v;
-        const views = { rankings: "#viewRankings", draft: "#viewDraft", search: "#viewSearch", lobby: "#viewLobby" };
-        const tabs = { rankings: "#tabRankings", draft: "#tabDraft", search: "#tabSearch", lobby: "#tabLobby" };
+        const views = { rankings: "#viewRankings", draft: "#viewDraft", search: "#viewSearch" };
+        const tabs = { rankings: "#tabRankings", draft: "#tabDraft", search: "#tabSearch" };
         for (const k in views) { const el = $(views[k]); if (el) el.hidden = k !== v; }
         for (const k in tabs) { const el = $(tabs[k]); if (el) el.setAttribute("aria-selected", String(k === v)); }
       }
-      // Player Search and Lobby are separate top-level tabs now; this shim
-      // keeps the older mode-switch call sites working unchanged.
+      // Lobby scouting lives in the Live Draft strip now; this shim keeps
+      // the older mode-switch call sites working unchanged.
       function setScoutMode(mode) {
-        setView(mode === "lobby" ? "lobby" : "search");
+        setView(mode === "lobby" ? "draft" : "search");
       }
       function initScout() {
         $("#tabRankings").addEventListener("click", () => setView("rankings"));
         $("#tabDraft").addEventListener("click", () => setView("draft"));
         $("#tabSearch").addEventListener("click", () => setView("search"));
-        $("#tabLobby").addEventListener("click", () => setView("lobby"));
         $("#lookupForm").addEventListener("submit", (e) => { e.preventDefault(); runLookup(); });
         buildLobbyRows();
         renderLiveLobby();
         window.addEventListener("ctrlward-state", renderLiveLobby);
-        $("#lobbyScoutBtn").addEventListener("click", scoutLobby);
+        const scoutLobbyBtn = $("#lobbyScoutBtn"); if (scoutLobbyBtn) scoutLobbyBtn.addEventListener("click", scoutLobby);
         const meBtn = $("#lobbyScoutMe"); if (meBtn) meBtn.addEventListener("click", scoutMe);
         const loadBtn = $("#lobbyLoad"); if (loadBtn) loadBtn.addEventListener("click", loadLobbyFromPaste);
         const pasteBox = $("#lobbyPaste"); if (pasteBox) pasteBox.addEventListener("paste", () => setTimeout(loadLobbyFromPaste, 50));
         lobbyFromURL();
-        $("#lobbyClear").addEventListener("click", () => {
+        const lobbyClearBtn = $("#lobbyClear"); if (lobbyClearBtn) lobbyClearBtn.addEventListener("click", () => {
           document.querySelectorAll(".lobby-row").forEach((row) => {
             row.querySelector(".lobby-id").value = "";
             row.querySelector(".lobby-champ").value = "";
