@@ -43,9 +43,14 @@ Requirements: Windows, a League of Legends client, internet on first run
 
 ## Updates
 
-The app checks this repo's latest Release once per launch (when configured
-with the repo name). Newer `tool.html` releases download automatically and
-apply on the next launch; newer `.exe` releases show a banner linking here.
+The app checks this repo's latest Release once per launch. Page updates
+(`tool.html`) are automatic — they download in the background and apply on
+the next launch. From **v1.3.0** the app also updates *itself*: a verified
+new `.exe` is downloaded in the background (checked against the checksum
+recorded on the release) and applied on the next launch, keeping the
+previous version beside it as `CtrlWard.exe.bak`. To roll back, close the
+app and rename `CtrlWard.exe.bak` over `CtrlWard.exe`. v1.3.0 itself is
+the last manual download — every release after it arrives on its own.
 
 ## Build from source
 

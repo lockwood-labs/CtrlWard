@@ -80,13 +80,17 @@ CACHE_DIR = os.path.join(app_dir(), "asset_cache")
 #   - a newer tool.html asset is downloaded automatically and placed next to
 #     the app (find_tool_html prefers it over the bundled copy), applying on
 #     the next launch;
-#   - a newer .exe can NOT replace the running program, so the app shows an
-#     update banner linking to the release page instead.
+#   - a newer .exe is staged for a self-update: the asset is downloaded
+#     into an "update" folder beside the app, verified against the sha256
+#     digest GitHub records for it, and swapped in by a small batch
+#     helper at the NEXT launch (the old build is kept as
+#     CtrlWard.exe.bak). See the self-update section further down.
+#     The banner still appears as the fallback (e.g. from source).
 # Set the repo in update_config.json next to the app: {"repo": "owner/name"}
 # or bake it into DEFAULT_UPDATE_REPO at build time. Empty = checks disabled.
 # ---------------------------------------------------------------------------
 
-APP_VERSION = "1.2.1"
+APP_VERSION = "1.3.0"
 DEFAULT_UPDATE_REPO = "lockwood-labs/CtrlWard"
 
 def load_update_repo():
@@ -409,6 +413,7 @@ STATE = {
     "message": "Starting…",
     "app_version": APP_VERSION,
     "update": None,           # {version, url, tool_downloaded} when a newer release exists
+    "appUpdate": None,        # {available: v} / {pendingRestart: v} — exe self-update state
 }
 STATE_LOCK = threading.Lock()
 
@@ -911,6 +916,258 @@ def real_poller(lockfile_arg):
         time.sleep(2)
 
 # ---------------------------------------------------------------------------
+# Self-update of the executable (frozen Windows builds only)
+#
+# A running .exe cannot overwrite itself, so the swap is two-staged:
+#   1. check_for_updates (background, once per launch) downloads a
+#      newer release's CtrlWard.exe into an "update" folder beside the
+#      app — but only when GitHub records a sha256 digest for the
+#      asset — verifies the download's size and sha256 against that
+#      metadata, and writes update/pending.json.
+#   2. At the NEXT launch, before anything else starts,
+#      apply_pending_update() re-verifies the staged file and hands
+#      the swap to a tiny batch helper: the helper waits for this
+#      process to exit, renames the running exe to CtrlWard.exe.bak,
+#      moves the new one into place, and relaunches it.
+# update/attempted.json is the anti-loop guard: if a version was
+# already attempted and this process STILL runs the old build, the
+# staged update is dropped rather than retried on every launch (the
+# release-page banner remains as the manual fallback).
+# Nothing here runs unless the app is a frozen Windows build; from
+# source, on other platforms, and in --demo-from-source, every entry
+# point below is a no-op. Nothing outside the exe's own folder and
+# its "update" subfolder is ever touched.
+# ---------------------------------------------------------------------------
+
+EXE_ASSET_NAME = "CtrlWard.exe"
+UPDATE_FOLDER = "update"
+
+def _is_frozen_windows():
+    return bool(getattr(sys, "frozen", False)) and sys.platform == "win32"
+
+def _update_dir(base=None):
+    return os.path.join(base if base is not None else app_dir(),
+                        UPDATE_FOLDER)
+
+def _staged_exe(base=None):
+    return os.path.join(_update_dir(base), EXE_ASSET_NAME + ".new")
+
+def _pending_file(base=None):
+    return os.path.join(_update_dir(base), "pending.json")
+
+def _attempted_file(base=None):
+    return os.path.join(_update_dir(base), "attempted.json")
+
+def _remove_quietly(path):
+    try:
+        os.remove(path)
+    except Exception:
+        pass
+
+def _sha256_file(path):
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+def _asset_sha256(asset):
+    """The sha256 GitHub recorded for a release asset (its "digest"
+    field has the form "sha256:<hex>"), or "" when the asset carries
+    no digest. An asset without a digest is never downloaded."""
+    digest = str((asset or {}).get("digest") or "").strip()
+    if digest.lower().startswith("sha256:"):
+        return digest.split(":", 1)[1].strip().lower()
+    return ""
+
+def verify_staged_file(path, size, sha256):
+    """True only when the file at path exists and matches BOTH the
+    recorded byte size and the recorded sha256. A missing digest or
+    size never verifies — an unverifiable file is never applied."""
+    if not sha256 or size is None:
+        return False
+    try:
+        if os.path.getsize(path) != int(size):
+            return False
+        return _sha256_file(path) == str(sha256).lower()
+    except Exception:
+        return False
+
+def read_pending(base=None):
+    data = _read_json_file(_pending_file(base), None)
+    return data if isinstance(data, dict) else None
+
+def _read_attempted(base=None):
+    data = _read_json_file(_attempted_file(base), None)
+    return data if isinstance(data, dict) else None
+
+def already_attempted(version, base=None):
+    attempted = _read_attempted(base)
+    return bool(attempted) and attempted.get("version") == version
+
+def should_block_reapply(pending_version, attempted_version,
+                         running_version):
+    """Anti-loop guard: an apply of pending_version was already
+    attempted, yet this process still runs an older build — the swap
+    did not take (or the user rolled back to the .bak). Do not try
+    again; drop the staged update and let the banner do its job."""
+    if not pending_version or attempted_version != pending_version:
+        return False
+    return is_newer(pending_version, running_version)
+
+def stage_exe_update(version, asset, base=None, log=print):
+    """Download a release's CtrlWard.exe asset into the update
+    folder, verify it against the asset's size + sha256 digest, and
+    record pending.json. Returns True when a verified update is
+    staged for the next launch. Any failure deletes the partial
+    download and returns False; the only trace is a log line.
+    Callers gate on _is_frozen_windows(); this re-checks anyway."""
+    if not _is_frozen_windows():
+        return False
+    sha = _asset_sha256(asset)
+    url = (asset or {}).get("browser_download_url")
+    size = (asset or {}).get("size")
+    if not sha or not url or size is None:
+        return False  # no digest (or no size) -> never download an exe
+    if already_attempted(version, base):
+        log(f"Self-update: v{version} was already attempted once — "
+            "not staging it again.")
+        return False
+    target = _staged_exe(base)
+    try:
+        os.makedirs(_update_dir(base), exist_ok=True)
+        data, _ctype = http_get_bytes(url, timeout=60)
+        with open(target, "wb") as f:
+            f.write(data)
+        if not verify_staged_file(target, size, sha):
+            log("Self-update: downloaded exe failed size/sha256 "
+                "verification — discarded.")
+            _remove_quietly(target)
+            return False
+        _write_json_file(_pending_file(base),
+                         {"version": version, "sha256": sha,
+                          "size": size})
+        log(f"Self-update: CtrlWard v{version} downloaded and "
+            "verified — it applies on the next launch.")
+        return True
+    except Exception as exc:
+        log(f"Self-update: staging failed ({exc.__class__.__name__}) "
+            "— continuing without it.")
+        _remove_quietly(target)
+        return False
+
+def build_apply_script(exe_path, staged_path, pending_file):
+    """The batch helper's text. Steps, in order: wait for the running
+    CtrlWard process to exit (the exe stays locked until it does, so
+    the rename retries), rename the exe to .bak (replacing any older
+    .bak), move the staged file into place, delete pending.json, and
+    relaunch. If the move fails, the .bak is renamed back and the old
+    build relaunches instead."""
+    exe_dir = os.path.dirname(exe_path)
+    exe_name = os.path.basename(exe_path)
+    bak_name = exe_name + ".bak"
+    rel_new = os.path.relpath(staged_path, exe_dir)
+    rel_pending = os.path.relpath(pending_file, exe_dir)
+    lines = [
+        "@echo off",
+        "rem CtrlWard self-update helper (generated by app.py; "
+        "safe to delete).",
+        f'cd /d "{exe_dir}"',
+        "rem Step 1: wait for the running CtrlWard to exit.",
+        "timeout /t 2 /nobreak >nul",
+        "set TRIES=0",
+        ":wait_for_exit",
+        "set /a TRIES+=1",
+        "if %TRIES% GTR 90 goto done",
+        f'if exist "{bak_name}" del /f /q "{bak_name}"',
+        f'ren "{exe_name}" "{bak_name}" 2>nul',
+        f'if exist "{bak_name}" goto swap_in',
+        "timeout /t 1 /nobreak >nul",
+        "goto wait_for_exit",
+        ":swap_in",
+        "rem Step 2: the verified new build moves into place.",
+        f'move /y "{rel_new}" "{exe_name}" >nul',
+        f'if not exist "{exe_name}" goto rollback',
+        f'del /f /q "{rel_pending}" 2>nul',
+        "rem Step 3: relaunch.",
+        f'start "" "{exe_name}"',
+        "goto done",
+        ":rollback",
+        f'ren "{bak_name}" "{exe_name}"',
+        f'start "" "{exe_name}"',
+        ":done",
+        'del /f /q "%~f0"',
+        "",
+    ]
+    return "\r\n".join(lines)
+
+def launch_apply_helper(bat_path, cwd):
+    flags = 0x00000008 | 0x00000200  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+    subprocess.Popen(["cmd", "/c", bat_path], cwd=cwd,
+                     stdout=subprocess.DEVNULL,
+                     stderr=subprocess.DEVNULL,
+                     creationflags=flags, close_fds=True)
+
+def apply_pending_update(base=None, exe_path=None, launcher=None,
+                         log=print):
+    """Apply a staged exe update, if one is pending. Called at the
+    very start of main(), before the server or UI. Returns True when
+    the helper was launched and this process must exit immediately
+    (the helper relaunches the new build once this one is gone).
+    Any problem cleans up the staged files and returns False, so the
+    app simply starts normally."""
+    if not _is_frozen_windows():
+        return False
+    base = base if base is not None else app_dir()
+    if exe_path is None:
+        exe_path = (sys.executable if getattr(sys, "frozen", False)
+                    else os.path.join(base, EXE_ASSET_NAME))
+    pending = read_pending(base)
+    if not pending:
+        return False
+    version = str(pending.get("version") or "")
+    staged = _staged_exe(base)
+    try:
+        if not version or not is_newer(version, APP_VERSION):
+            # Already running this (or a newer) build — the staged
+            # files are leftovers; clear them and start normally.
+            _remove_quietly(_pending_file(base))
+            _remove_quietly(staged)
+            return False
+        attempted = _read_attempted(base)
+        if should_block_reapply(version,
+                                (attempted or {}).get("version"),
+                                APP_VERSION):
+            log(f"Self-update: v{version} was already attempted and "
+                f"this is still v{APP_VERSION} — dropping the staged "
+                "update instead of looping.")
+            _remove_quietly(_pending_file(base))
+            _remove_quietly(staged)
+            return False
+        if not verify_staged_file(staged, pending.get("size"),
+                                  pending.get("sha256")):
+            log("Self-update: staged exe failed re-verification — "
+                "dropping it.")
+            _remove_quietly(_pending_file(base))
+            _remove_quietly(staged)
+            return False
+        bat_path = os.path.join(_update_dir(base), "apply_update.bat")
+        with open(bat_path, "w", encoding="utf-8", newline="") as f:
+            f.write(build_apply_script(exe_path, staged,
+                                       _pending_file(base)))
+        _write_json_file(_attempted_file(base),
+                         {"version": version,
+                          "at": int(time.time())})
+        (launcher or launch_apply_helper)(
+            bat_path, os.path.dirname(exe_path))
+        log(f"Self-update: applying v{version} — restarting…")
+        return True
+    except Exception as exc:
+        log(f"Self-update: apply failed ({exc.__class__.__name__}) "
+            "— starting normally.")
+        return False
+
+# ---------------------------------------------------------------------------
 # Update check (background, once per launch, silent on any failure)
 # ---------------------------------------------------------------------------
 
@@ -929,6 +1186,8 @@ def check_for_updates():
         assets = {a.get("name"): a.get("browser_download_url")
                   for a in release.get("assets", [])}
         tool_url = assets.get("tool.html")
+        exe_asset = next((a for a in release.get("assets", [])
+                          if a.get("name") == EXE_ASSET_NAME), None)
         if tool_url and is_newer(tag, current_tool_version()):
             # A newer tool page than the one this install is running:
             # download it beside the app (find_tool_html prefers it over
@@ -954,8 +1213,10 @@ def check_for_updates():
             print(f"Update available: v{version} "
                   f"({release.get('html_url', '')})")
         elif not tool_url and is_newer(tag, APP_VERSION):
-            # An .exe-only release (no tool page to auto-apply): point at
-            # the release page — a running .exe cannot replace itself.
+            # An .exe-only release (no tool page to auto-apply): point
+            # at the release page. (On frozen Windows builds the .exe
+            # is ALSO staged for self-update just below; the banner
+            # remains the fallback everywhere else.)
             set_state(update={"version": version,
                               "url": release.get("html_url", ""),
                               "tool_downloaded": False})
@@ -963,6 +1224,15 @@ def check_for_updates():
                   f"({release.get('html_url', '')})")
         # Otherwise the tool from the latest release is already the one
         # being served — stay silent, no banner.
+        # Self-update of the .exe itself (frozen Windows builds only):
+        # a release newer than the running app that carries a
+        # CtrlWard.exe asset is staged in the background; the next
+        # launch applies it (see apply_pending_update).
+        if (_is_frozen_windows() and exe_asset is not None
+                and is_newer(tag, APP_VERSION)):
+            set_state(appUpdate={"available": version})
+            if stage_exe_update(version, exe_asset):
+                set_state(appUpdate={"pendingRestart": version})
     except Exception:
         pass  # offline or repo not set up yet — updates are best-effort
 
@@ -1245,6 +1515,13 @@ def open_app_window(url):
 # ---------------------------------------------------------------------------
 
 def main():
+    # A staged self-update applies before anything else starts: the
+    # batch helper swaps the .exe and relaunches it, so this process
+    # exits immediately. No-op unless a verified update is pending
+    # (and only ever on frozen Windows builds).
+    if apply_pending_update():
+        return 0
+
     ap = argparse.ArgumentParser(description="CtrlWard (read-only live draft)")
     ap.add_argument("--demo", action="store_true", help="Simulated champ select")
     ap.add_argument("--port", type=int, default=0, help="Fixed port (default: automatic)")
