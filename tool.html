@@ -240,6 +240,62 @@
       .clear-banner .cb-d { font-size: 14.5px; margin-top: 2px; max-width: 56ch; }
       .empty-note { padding: 26px 14px; color: var(--ink-soft); text-align: center; }
 
+      /* ---------- rankings grid (compact champion cards) ---------- */
+      .champ-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); margin-top: 14px; }
+      @media (max-width: 560px) { .champ-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } }
+      @media (max-width: 380px) { .champ-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      .champ-grid .empty-note { grid-column: 1 / -1; }
+      .champ-card {
+        position: relative; display: flex; flex-direction: column; text-align: left; width: 100%;
+        background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-card);
+        padding: 0; overflow: hidden; color: var(--ink); cursor: pointer; font: inherit;
+      }
+      .champ-card:hover, .champ-card:focus-visible { border-color: var(--gold); }
+      .champ-card.selected { border-color: var(--gold); box-shadow: var(--glow); }
+      .champ-card.unavailable { opacity: 0.55; }
+      .champ-card.unavailable .cc-art img { filter: grayscale(0.85); }
+      .cc-art { position: relative; background: var(--panel-2); }
+      .cc-art img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+      .champ-card .pool-btn { position: absolute; top: 6px; right: 6px; z-index: 3; width: 30px; height: 30px; font-size: 15px; background: rgba(9, 13, 18, 0.85); }
+      .cc-body { padding: 9px 10px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+      .cc-name { font-weight: 700; font-size: 15.5px; line-height: 1.15; overflow-wrap: anywhere; }
+      .cc-role { font-size: 11.5px; color: var(--ink-soft); letter-spacing: 0.05em; text-transform: uppercase; font-weight: 700; }
+      .cc-stats { display: flex; align-items: flex-end; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+      .cc-score .v { font-family: var(--font-display); font-size: 26px; line-height: 1; color: var(--gold-strong); }
+      .cc-score .k, .cc-stat .k { display: block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); margin-top: 2px; }
+      .cc-stat .v { font-weight: 700; font-size: 14.5px; }
+      .clear-flag {
+        position: absolute; right: 0; bottom: 0; z-index: 2; padding: 3px 8px 3px 10px;
+        font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; font-weight: 800;
+        background: rgba(9, 13, 18, 0.88); border-top: 1px solid var(--line); border-left: 1px solid var(--line);
+        clip-path: polygon(7px 0, 100% 0, 100% 100%, 0 100%, 0 7px);
+      }
+      .clear-flag .cf-k { font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-soft); margin-right: 5px; }
+      .clear-flag.clr-vfast { color: var(--good); } .clear-flag.clr-fast { color: var(--teal); }
+      .clear-flag.clr-avg { color: var(--warn); } .clear-flag.clr-slow { color: var(--bad); }
+      .clear-flag.clr-na { color: var(--ink-soft); }
+      #champDetail .detail { margin-top: 14px; }
+      .champ-card.has-flag .cc-body { padding-bottom: 27px; }
+
+      /* ---------- match history (Player Search dossier) ---------- */
+      .mh-card { margin-top: 12px; background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; }
+      .mh-card h3 { font-size: 15px; color: var(--teal); letter-spacing: 0.08em; margin-bottom: 8px; }
+      .mh-card h3 .sub { color: var(--ink-soft); font-family: ui-monospace, Menlo, monospace; font-size: 11px; letter-spacing: 0.02em; text-transform: none; }
+      .mh-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 7px 9px; border-top: 1px solid var(--line); }
+      .mh-row:first-of-type { border-top: 0; }
+      .mh-row.win { background: rgba(74, 222, 128, 0.06); }
+      .mh-row.loss { background: rgba(251, 113, 133, 0.05); }
+      .mh-row img { width: 40px; height: 40px; border: 1px solid var(--line); }
+      .mh-row .mh-cn { font-weight: 700; line-height: 1.2; }
+      .mh-row .mh-cm { font-size: 12.5px; color: var(--ink-soft); font-family: ui-monospace, Menlo, monospace; }
+      .mh-row .mh-right { text-align: right; }
+      .mh-res { display: inline-block; font-family: ui-monospace, Menlo, monospace; font-weight: 800; font-size: 11px; letter-spacing: 0.06em; padding: 2px 7px; border: 1px solid; }
+      .mh-res.w { color: var(--good); border-color: var(--good); }
+      .mh-res.l { color: var(--bad); border-color: var(--bad); }
+      .mh-row .mh-ago { display: block; font-size: 12px; color: var(--ink-soft); margin-top: 3px; white-space: nowrap; }
+      @media (max-width: 560px) { .mh-row { grid-template-columns: 36px minmax(0, 1fr) auto; gap: 8px; padding: 7px 6px; } .mh-row img { width: 36px; height: 36px; } }
+      .splash-line { font-family: ui-monospace, Menlo, monospace; }
+
       /* ---------- enemy answers ---------- */
       .enemy-panel {
         display: none; margin-top: 16px; background: var(--panel); border: 1px solid var(--gold);
@@ -570,7 +626,7 @@
       .app-tab.intel-tab[aria-selected="true"] { border-color: var(--teal); background: #0a2027; box-shadow: 0 0 0 1px var(--teal), 0 0 18px rgba(45, 217, 232, 0.25); }
       .app-tab.intel-tab[aria-selected="true"] .tab-t { color: var(--teal); }
       /* The Intel view re-tints the whole page: cyan grid, cyan glow. */
-      body[data-view="scout"] {
+      body[data-view="scout"], body[data-view="search"], body[data-view="lobby"] {
         --bg-image: linear-gradient(rgba(45, 217, 232, 0.10) 1px, transparent 1px), linear-gradient(90deg, rgba(45, 217, 232, 0.10) 1px, transparent 1px), repeating-linear-gradient(0deg, rgba(45,217,232,0.05) 0 1px, transparent 1px 3px), radial-gradient(760px 360px at 15% -40px, rgba(45, 217, 232, 0.16), transparent 60%);
       }
 
@@ -756,8 +812,10 @@
       .teamread li { font-size: 14.5px; padding: 4px 0 0; }
       .teamread li::before { content: "▸ "; color: var(--teal); font-weight: 700; }
       @media (max-width: 767px) {
-        .app-tabs { flex-direction: column; gap: 8px; }
-        .app-tab { flex: none; min-height: 52px; }
+        .app-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .app-tab { flex: none; min-height: 52px; padding: 10px 12px; }
+        .app-tab .tab-t { font-size: 14.5px; }
+        .app-tab .tab-s { font-size: 12px; }
         .intel-shell { padding: 13px; margin-top: 12px; }
         .intel-radar { display: none; }
         .intel-mode-btn, .scout-btn { min-height: 48px; }
@@ -793,6 +851,7 @@
         .filter-reset { padding: 9px 14px; display: inline-flex; align-items: center; }
         .filter-toggle { min-width: 68px; min-height: 44px; }
         .pool-btn { width: 44px; height: 44px; font-size: 18px; flex: none; }
+        .champ-card .pool-btn { width: 40px; height: 40px; }
         .close-btn { width: 44px; height: 44px; font-size: 17px; }
         .pool-chip { padding: 2px 2px 2px 4px; }
         .pool-chip button {
@@ -961,40 +1020,32 @@
 
       <nav class="app-tabs" role="tablist" aria-label="CtrlWard tools">
         <button type="button" class="app-tab" id="tabRankings" role="tab" aria-selected="true" aria-controls="viewRankings">
-          <span class="tab-t">Rankings &amp; Draft</span>
-          <span class="tab-s">Blind-pick safety for all 173 champions, plus the Live Draft companion.</span>
+          <span class="tab-t">Rankings</span>
+          <span class="tab-s">Blind-pick safety for all 173 champions.</span>
         </button>
-        <button type="button" class="app-tab intel-tab" id="tabScout" role="tab" aria-selected="false" aria-controls="viewScout">
-          <span class="tab-t">Player Intel</span>
-          <span class="tab-s">Player Lookup + Lobby Scout — comfort picks, recent form, tendencies.</span>
+        <button type="button" class="app-tab" id="tabDraft" role="tab" aria-selected="false" aria-controls="viewDraft">
+          <span class="tab-t">Live Draft</span>
+          <span class="tab-s">Pick-by-pick recommendations in champ select.</span>
+        </button>
+        <button type="button" class="app-tab intel-tab" id="tabSearch" role="tab" aria-selected="false" aria-controls="viewSearch">
+          <span class="tab-t">Player Search</span>
+          <span class="tab-s">One Riot ID — profile and match history.</span>
+        </button>
+        <button type="button" class="app-tab intel-tab" id="tabLobby" role="tab" aria-selected="false" aria-controls="viewLobby">
+          <span class="tab-t">Lobby</span>
+          <span class="tab-s">Scout your whole champ-select team at once.</span>
         </button>
       </nav>
 
-      <div id="viewRankings">
+      <div id="viewDraft" hidden>
       <div class="draft-panel" id="draftPanel">
         <div class="draft-head">
           <div>
             <h2>Live Draft</h2>
-            <p class="sub">In champ select? Add picks as they happen — ally picks, enemy picks, bans — and the
-            recommendations below update instantly: who counters what they've locked, who fits what your team
-            has, and who stays safe if your lane opponent hasn't shown yet.</p>
+            <p class="sub">Add picks as they happen — recommendations update instantly. Read-only: it never picks or locks anything in your client.</p>
           </div>
           <button type="button" class="draft-toggle-btn" id="draftToggle" aria-pressed="false">Start Live Draft</button>
         </div>
-        <p class="draft-honesty">Counter and synergy numbers come from <b>this tool's illustrative model</b> (or your
-        CSV-imported numbers below) — not live Riot data. Synergy is model-based, derived from archetypes and damage
-        profiles. <b>The data behind every recommendation is printed on the card:</b> each locked enemy contributes
-        one matchup number per candidate, labelled with where it came from — your CSV, a curated kit interaction
-        (hard CC that cancels a channel, say), the same-role matchup model, or the cross-role model — and the weight
-        its role correspondence gave it. <b>Expected roles are optional context:</b> under each team you can tell the
-        draft where a locked flex pick is actually going, and that role — not the auto-guess shown in the selector —
-        drives its correspondence weight, its cross-role number, and whether it counts as your locked lane opponent.
-        The breakdown on each card marks any role you set. <b>Early-game sketch:</b> once your lane opponent is locked,
-        each Top card and the champion detail view add a short note on how the early game should play against them —
-        a model sketch generated from that matchup number and both champions' archetypes, not matchup VODs.
-        <b>One bad number is enough:</b> any single locked matchup under 45% at a
-        real interaction weight drags the Counter score down and bars the pick from the Top 3, as does a weighted
-        average under 47% — for every champion, not just a hardcoded few. <b>Read-only:</b> this mode only recommends — it never picks, hovers, or locks anything in your game client.</p>
         <div class="draft-body" id="draftBody" hidden>
           <div class="draft-role-row">
             <div class="field">
@@ -1070,7 +1121,9 @@
           <div id="draftRecs" aria-live="polite"></div>
         </div>
       </div>
+      </div>
 
+      <div id="viewRankings">
       <div class="roles" id="roles" role="group" aria-label="Role"></div>
 
       <div class="controls">
@@ -1149,11 +1202,8 @@
       <div class="enemy-panel" id="enemyPanel" aria-live="polite"></div>
 
       <div class="draft-list-note" id="draftListNote" hidden></div>
-      <div class="list-head" aria-hidden="true">
-        <span style="text-align:center">#</span><span>Champion</span><span>CtrlWard</span>
-        <span>Exp. WR</span><span>Spread</span><span id="headClear" style="display:none">1st clear</span><span>Counter risk</span><span>Worst counter</span><span></span>
-      </div>
-      <div id="list"></div>
+      <div id="list" class="champ-grid"></div>
+      <div id="champDetail"></div>
       <div class="clear-note" id="clearNote" hidden></div>
 
       <section class="block">
@@ -1216,16 +1266,15 @@
       </section>
       </div>
 
-      <div id="viewScout" hidden>
+      <div id="viewSearch" hidden>
         <section class="intel-shell" aria-labelledby="intelTitle">
           <div class="intel-head">
             <div>
-              <div class="intel-kicker">FILE // PLAYER INTEL — LOOKUP + LOBBY SCOUT</div>
-              <h2 id="intelTitle">Scout a player. <span class="cy">Read the lobby.</span></h2>
-              <p class="intel-lede">One scouting desk, two jobs. <b>Player Lookup</b> pulls a full dossier on any
-              Riot ID — the champions they're actually comfortable on, their form over the last window, and the
-              tendencies you can play around. <b>Lobby Scout</b> lines up your whole champ-select team at once
-              and reads the lobby as a unit: who to play through, who needs cover, and what your comp is missing.</p>
+              <div class="intel-kicker">FILE // PLAYER SEARCH</div>
+              <h2 id="intelTitle">Scout a <span class="cy">player.</span></h2>
+              <p class="intel-lede">Type a Riot ID and the profile pops up — headed by who they are, carried by
+              their match history, with the champions they're actually comfortable on, their form over the last
+              window, and the tendencies you can play around.</p>
             </div>
             <svg class="intel-radar" width="80" height="80" viewBox="0 0 80 80" aria-hidden="true">
               <circle cx="40" cy="40" r="36" fill="none" stroke="#2dd9e8" stroke-opacity="0.5" />
@@ -1236,11 +1285,6 @@
               <circle cx="30" cy="55" r="2.5" fill="#2dd9e8" />
               <circle cx="40" cy="40" r="2.5" fill="#edf4f8" />
             </svg>
-          </div>
-
-          <div class="intel-modes" role="group" aria-label="Scout mode">
-            <button type="button" class="intel-mode-btn" id="modeLookup" aria-pressed="true">Player Lookup</button>
-            <button type="button" class="intel-mode-btn" id="modeLobby" aria-pressed="false">Lobby Scout</button>
           </div>
 
           <div id="paneLookup">
@@ -1274,7 +1318,21 @@
             </div>
           </div>
 
-          <div id="paneLobby" hidden>
+        </section>
+      </div>
+
+      <div id="viewLobby" hidden>
+        <section class="intel-shell" aria-labelledby="lobbyTitle">
+          <div class="intel-head">
+            <div>
+              <div class="intel-kicker">FILE // LOBBY SCOUT</div>
+              <h2 id="lobbyTitle">Read the <span class="cy">lobby.</span></h2>
+              <p class="intel-lede">Your whole champ-select team at once: who to play through, who needs cover,
+              and what your comp is missing. Tap a teammate to open their full profile in Player Search.</p>
+            </div>
+          </div>
+
+          <div id="paneLobby">
             <div class="live-head">
               <h3>Live lobby</h3>
               <span class="live-note">Fed by the desktop app while you're in champ select — tap a teammate to scout them.</span>
@@ -1576,8 +1634,9 @@
         const jg = state.role === "jungle";
         $("#list").classList.toggle("has-clear", jg);
         const head = document.querySelector(".list-head");
-        head.classList.toggle("has-clear", jg);
-        $("#headClear").style.display = jg ? "" : "none";
+        if (head) head.classList.toggle("has-clear", jg);
+        const headClear = $("#headClear");
+        if (headClear) headClear.style.display = jg ? "" : "none";
         $("#sortClear").hidden = !jg;
         if (!jg && state.sort === "clear") { state.sort = "score"; $("#sort").value = "score"; }
         const note = $("#clearNote");
@@ -1603,20 +1662,21 @@
         if (!ids.length) {
           const filtersOn = state.filterClearOn || state.filterWinOn;
           el.innerHTML = '<div class="empty-note">No champions match. '
-            + (filtersOn ? "Try loosening the filters above, or use “Clear filters” to see the full list again."
-              : state.poolOnly ? "Star champions with ★ to build your pool, or turn “My pool only” off."
+            + (filtersOn ? "Try loosening the filters above, or use \u201cClear filters\u201d to see the full list again."
+              : state.poolOnly ? "Star champions with \u2605 to build your pool, or turn \u201cMy pool only\u201d off."
                                : "Try a different search.") + "</div>";
+          const host0 = $("#champDetail"); if (host0) host0.innerHTML = "";
           return;
         }
         const note = $("#draftListNote");
         if (note) {
           if (draft.active) {
             note.hidden = false;
-            note.textContent = "Live Draft active — this ranking is sorted by draft score for "
+            note.textContent = "Live Draft active \u2014 this ranking is sorted by draft score for "
               + ROLE_LABEL[state.role] + ". Banned and already-picked champions are marked unavailable at the bottom.";
           } else { note.hidden = true; note.textContent = ""; }
         }
-        el.innerHTML = ids.map((id, i) => {
+        el.innerHTML = ids.map((id) => {
           const s = champStats(state.role, id);
           const c = DATA.champs[id];
           const dActive = draft.active;
@@ -1627,40 +1687,37 @@
             else if (draft.enemy.includes(id)) unavailTag = "Enemy pick";
             else if (draft.ally.includes(id)) unavailTag = "Ally pick";
           }
-          return '<div class="row' + (state.selected === id ? " selected" : "") + (unavailTag ? " unavailable" : "") + '" role="button" tabindex="0" data-id="' + id + '" aria-expanded="' + (state.selected === id) + '" aria-label="Details for ' + esc(c.name) + '">'
-            + '<div class="rank">' + (i + 1) + "</div>"
-            + '<div class="champ">' + icon(id) + '<div><div class="nm">' + esc(c.name)
+          let flag = "";
+          if (jg) {
+            const ci = clearInfo(id);
+            flag = ci
+              ? '<span class="clear-flag ' + ci.cls + '"><span class="cf-k">Clear</span>' + ci.t + "</span>"
+              : '<span class="clear-flag clr-na"><span class="cf-k">Clear</span>n/m</span>';
+          }
+          return '<div class="champ-card' + (jg ? " has-flag" : "") + (state.selected === id ? " selected" : "") + (unavailTag ? " unavailable" : "") + '" role="button" tabindex="0" data-id="' + id + '" aria-expanded="' + (state.selected === id) + '" aria-label="Details for ' + esc(c.name) + '">'
+            + '<div class="cc-art">' + icon(id)
+            + '<button type="button" class="pool-btn' + (myPool.has(id) ? " on" : "") + '" data-pool="' + id + '" aria-pressed="' + myPool.has(id) + '" aria-label="Toggle ' + esc(c.name) + ' in my pool">' + (myPool.has(id) ? "\u2605" : "\u2606") + "</button></div>"
+            + '<div class="cc-body"><div class="cc-name">' + esc(c.name)
             + (unavailTag ? '<span class="unavail-tag">' + unavailTag + "</span>" : "") + '</div>'
-            + '<div class="arch">' + esc(ARCH_LABEL[c.arch]) + " · " + fmt(DATA.pools[state.role][id].pick) + "% pick rate"
-            + (dInfo && !unavailTag ? ' · <span class="draft-score-tag">Draft ' + dInfo.total + "</span>" : "") + "</div></div></div>"
-            + '<div class="score-cell"><div class="score-num">' + s.score + '</div>'
-            + '<div class="score-bar"><i style="width:' + s.score + '%"></i></div></div>'
-            + '<div class="mobile-stats">'
-            + '<div class="stat exp-cell"><div class="v ' + wrClass(s.exp) + '">' + fmt(s.exp) + '%</div><div class="k">Exp. WR</div></div>'
-            + '<div class="stat spread-cell"><div class="v">±' + fmt(s.spread) + '</div><div class="k">Spread</div></div>'
-            + (jg ? clearCellHTML(id) : "")
-            + '<div class="stat risk-cell"><div class="v">' + fmt(s.risk, 0) + '%</div><div class="k">Counter risk</div></div>'
-            + "</div>"
-            + '<div class="counter-cell">' + icon(s.worst.e) + '<div><span class="k">Worst counter</span>'
-            + '<span class="cn">' + esc(name(s.worst.e)) + '</span> <span class="cw">' + fmt(s.worst.v) + "%</span></div></div>"
-            + '<button type="button" class="pool-btn' + (myPool.has(id) ? " on" : "") + '" data-pool="' + id + '" aria-pressed="' + myPool.has(id) + '" aria-label="Toggle ' + esc(c.name) + ' in my pool">' + (myPool.has(id) ? "★" : "☆") + "</button>"
-            + "</div>"
-            + (state.selected === id ? detailHTML() : "");
+            + '<div class="cc-role">' + ROLE_LABEL[state.role]
+            + (dInfo && !unavailTag ? ' \u00b7 <span class="draft-score-tag">Draft ' + dInfo.total + "</span>" : "") + "</div>"
+            + '<div class="cc-stats"><span class="cc-score"><span class="v">' + s.score + '</span><span class="k">CtrlWard</span></span>'
+            + '<span class="cc-stat"><span class="v ' + wrClass(s.exp) + '">' + fmt(s.exp) + '%</span><span class="k">Exp. WR</span></span>'
+            + '<span class="cc-stat"><span class="v">' + fmt(DATA.pools[state.role][id].pick) + '%</span><span class="k">Pick rate</span></span></div>'
+            + "</div>" + flag + "</div>";
         }).join("");
-        el.querySelectorAll(".row").forEach((row) => {
-          row.addEventListener("click", (ev) => {
+        el.querySelectorAll(".champ-card").forEach((card) => {
+          card.addEventListener("click", (ev) => {
             if (ev.target.closest(".pool-btn")) return;
-            selectChamp(row.dataset.id);
+            selectChamp(card.dataset.id);
           });
-          row.addEventListener("keydown", (ev) => {
+          card.addEventListener("keydown", (ev) => {
             if (ev.target.closest(".pool-btn")) return;
-            if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); selectChamp(row.dataset.id); }
+            if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); selectChamp(card.dataset.id); }
           });
         });
         el.querySelectorAll(".pool-btn").forEach((b) =>
           b.addEventListener("click", () => togglePool(b.dataset.pool)));
-        const dc = el.querySelector("#detailClose");
-        if (dc) dc.addEventListener("click", () => { state.selected = null; renderList(); });
       }
 
       function renderPoolBar() {
@@ -1779,9 +1836,8 @@
           + "in ranked solo queue games with no early fight, death or gank (LoL Recommender, labelled patch 26.21).</div></div></div>";
       }
 
-      /* The detail panel renders inline, directly under the selected ranking
-         row (see renderList), so opening a champion expands it in place
-         instead of jumping to a shared section at the bottom of the page. */
+      /* The detail panel markup: rendered by renderDetail into the
+         full-width host directly under the rankings grid. */
       function detailHTML() {
         if (!state.selected || !DATA.pools[state.role][state.selected]) return "";
         const id = state.selected, c = DATA.champs[id], s = champStats(state.role, id);
@@ -1821,13 +1877,46 @@
           + "</div></div></div>";
       }
 
-      function renderDetail() { /* detail markup is emitted inline by renderList via detailHTML() */ }
+      /* The detail panel renders full-width in its own host under the grid
+         (see detailHTML). Opening records the grid scroll position; closing
+         restores it, so the reader lands back where they were. */
+      let detailReturnScroll = null;
+      function renderDetail() {
+        const host = $("#champDetail");
+        if (!host) return;
+        host.innerHTML = detailHTML();
+        const dc = host.querySelector("#detailClose");
+        if (dc) dc.addEventListener("click", () => {
+          state.selected = null;
+          renderList(); renderDetail();
+          if (detailReturnScroll != null) { window.scrollTo(0, detailReturnScroll); detailReturnScroll = null; }
+        });
+      }
 
       function selectChamp(id) {
-        // Clicking the open champion collapses it; any other champion moves
-        // the expansion to its row. No scrolling: the row stays where it was.
-        state.selected = state.selected === id ? null : id;
+        // Clicking the open champion collapses its detail; any other
+        // champion moves the panel to that champion.
+        const opening = state.selected !== id;
+        if (opening) detailReturnScroll = window.scrollY;
+        state.selected = opening ? id : null;
         renderList(); renderDetail();
+        if (opening) {
+          const d = $("#detail");
+          if (d) requestAnimationFrame(() => d.scrollIntoView({ block: "nearest" }));
+        } else if (detailReturnScroll != null) {
+          window.scrollTo(0, detailReturnScroll); detailReturnScroll = null;
+        }
+      }
+
+      // Open a champion's detail from another view (e.g. a Live Draft Top 3
+      // card): switch to Rankings and expand the panel there.
+      function openChampDetail(id) {
+        setView("rankings");
+        detailReturnScroll = window.scrollY;
+        state.selected = id;
+        renderList(); renderDetail();
+        const d = $("#detail");
+        if (d) requestAnimationFrame(() => d.scrollIntoView({ block: "start" }));
       }
 
       function renderAll() { syncClearUI(); syncFilterUI(); renderDraft(); renderList(); renderPoolBar(); renderEnemy(); renderDetail(); }
@@ -2397,7 +2486,7 @@
             "<p><b>Blocked from the Top 3 — " + esc(name(c.id)) + ":</b> " + c.d.reasons.map((r) => esc(r)).join(" ") + "</p>").join("") + "</div>";
         }
         recs.querySelectorAll("[data-draft-pick]").forEach((b) =>
-          b.addEventListener("click", () => selectChamp(b.dataset.draftPick)));
+          b.addEventListener("click", () => openChampDetail(b.dataset.draftPick)));
       }
 
       function addDraftPick(key, id) {
@@ -2525,6 +2614,7 @@
         if (!p.has("live") && !p.has("ally") && !p.has("enemy") && !p.has("bans")) return;
         const list = (k) => { const v = p.get(k); return v ? v.split(",").map((s) => s.trim()).filter(Boolean) : []; };
         applyDraftImport({ role: p.get("role"), ally: list("ally"), enemy: list("enemy"), bans: list("bans"), allyRoles: parseRoleMapParam(p.get("allyRoles")), enemyRoles: parseRoleMapParam(p.get("enemyRoles")) }, "link draft");
+        setView("draft");
         const panel = $("#draftPanel");
         if (panel) panel.scrollIntoView({ block: "start" });
       }
@@ -2706,6 +2796,60 @@
         if (mainRole) out.push("Most of their games are " + roleLabelOf(mainRole.role) + " (" + mainRole.pct + "% of the window) — expect them on-role and set up around that lane.");
         return out;
       }
+      /* ----- match history (from the profile's "matches" array) -----
+         Field names are read defensively: the server may hand back kills /
+         deaths / assists flat or as a kda object, a duration in seconds or
+         as text, and a timestamp as epoch ms, epoch s, or an ISO string.
+         When "matches" is absent the section is omitted entirely. */
+      function relAgoFromTs(ts) {
+        if (ts == null) return "";
+        let t = ts;
+        if (typeof t === "string" && isNaN(Number(t))) { const parsed = Date.parse(t); if (isNaN(parsed)) return ""; t = parsed; }
+        t = Number(t);
+        if (!isFinite(t) || t <= 0) return "";
+        if (t < 1e12) t = t * 1000; // seconds epoch
+        const diff = Date.now() - t;
+        if (diff < 0) return "today";
+        const mins = Math.floor(diff / 60000);
+        if (mins < 60) return mins <= 1 ? "just now" : mins + "m ago";
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return hrs + "h ago";
+        const days = Math.floor(hrs / 24);
+        if (days === 1) return "1d ago";
+        if (days < 30) return days + "d ago";
+        const months = Math.floor(days / 30);
+        return months <= 1 ? "1mo ago" : months + "mo ago";
+      }
+      function matchesHTML(p) {
+        const list = Array.isArray(p.matches) ? p.matches : null;
+        if (!list || !list.length) return "";
+        const rows = list.map((m) => {
+          const champ = m.champion || m.champ || m.championName || "";
+          const win = typeof m.win === "boolean" ? m.win
+            : typeof m.won === "boolean" ? m.won
+            : m.result != null ? /^(w|win|victory)/i.test(String(m.result)) : null;
+          const kd = (m.kda && typeof m.kda === "object") ? m.kda : {};
+          const k = m.kills != null ? m.kills : kd.k, d = m.deaths != null ? m.deaths : kd.d, a = m.assists != null ? m.assists : kd.a;
+          const kdaTxt = (k != null && d != null && a != null) ? fmt(k, 0) + "/" + fmt(d, 0) + "/" + fmt(a, 0)
+            : (typeof m.kda === "string" ? m.kda : "");
+          const durSec = m.durationSec != null ? m.durationSec
+            : m.gameDuration != null ? m.gameDuration
+            : (typeof m.duration === "number" ? m.duration : null);
+          let durTxt = "";
+          if (typeof m.duration === "string" && m.duration) durTxt = m.duration;
+          else if (typeof m.gameLength === "string" && m.gameLength) durTxt = m.gameLength;
+          else if (durSec != null) { const mm = Math.floor(durSec / 60), ss = Math.round(durSec % 60); durTxt = mm + ":" + String(ss).padStart(2, "0"); }
+          const cspm = m.csPerMin != null ? m.csPerMin : (m.cs != null && durSec ? m.cs / (durSec / 60) : null);
+          const role = m.role || m.teamPosition || m.position || "";
+          const ago = relAgoFromTs(m.ts != null ? m.ts : (m.timestamp != null ? m.timestamp : (m.gameCreation != null ? m.gameCreation : m.date)));
+          const meta = [kdaTxt ? "KDA " + kdaTxt : "", cspm != null ? fmt(cspm) + " CS/min" : "", durTxt, role ? roleLabelOf(role) : ""].filter(Boolean).join(" \u00b7 ");
+          return '<div class="mh-row ' + (win === true ? "win" : win === false ? "loss" : "") + '">' + champIconHTML(champ)
+            + '<div><div class="mh-cn">' + sesc(champDisplay(champ) || String(champ)) + '</div><div class="mh-cm">' + sesc(meta) + "</div></div>"
+            + '<div class="mh-right">' + (win != null ? '<span class="mh-res ' + (win ? "w" : "l") + '">' + (win ? "WIN" : "LOSS") + "</span>" : "")
+            + (ago ? '<span class="mh-ago">' + sesc(ago) + "</span>" : "") + "</div></div>";
+        }).join("");
+        return '<div class="mh-card"><h3>Match history <span class="sub">\u2014 most recent first</span></h3>' + rows + "</div>";
+      }
       let lastProfile = null;
       function renderDossier(p) {
         lastProfile = p;
@@ -2756,6 +2900,7 @@
           + signalHTML("Overall win rate", Math.round(totals.winRate || 0), totals.wins + "W – " + totals.losses + "L across " + totals.games + " games in the window")
           + (top ? signalHTML("Top comfort WR", Math.round(top.winRate || 0), sesc(champDisplay(top.champion)) + " — " + top.games + " games in the window") : signalHTML("Top comfort WR", 0, "No champion games in the window"))
           + "</div>"
+          + matchesHTML(p)
           + '<div class="dos-grid">'
           + '<div class="dos-card"><h3>Champion comfort <span class="sub">— where the reps are</span></h3>'
           + (champs.length ? champs.map((c) => {
@@ -2824,19 +2969,48 @@
         } else if (st) { st.textContent = "Copy isn't available here — the dossier above has everything."; }
       }
       /* ----- running a lookup (manual, live teammate, or Scout me) ----- */
+      /* Rotating ward-themed splash lines while a lookup loads: a fresh
+         line about every 1.6s, never the same line twice in a row, and the
+         rotation stops the moment the fetch resolves or fails. */
+      const SPLASH_LINES = [
+        "Warding the tri-bush\u2026", "Warding the Baron pit\u2026", "Using Oracle Lens to clear vision\u2026",
+        "Placing a Control Ward\u2026", "Facechecking the river bush\u2026", "Sweeping the dragon pit\u2026",
+        "Dropping a Farsight Ward in their jungle\u2026", "Checking the pixel brush\u2026", "Clearing the ward on raptors\u2026",
+        "Peeking over the Baron wall\u2026", "Holding the sweeper\u2026 almost\u2026", "Pinging the minimap for vision\u2026"
+      ];
+      let splashTimer = null, splashLast = -1, splashSeq = 0;
+      function splashNext() {
+        let i;
+        do { i = Math.floor(Math.random() * SPLASH_LINES.length); } while (i === splashLast);
+        splashLast = i;
+        return SPLASH_LINES[i];
+      }
+      function stopSplash() { if (splashTimer) { clearInterval(splashTimer); splashTimer = null; } }
+      function startSplash(box, seq) {
+        stopSplash();
+        splashSeq = seq;
+        box.innerHTML = '<div class="intel-empty splash-line">' + splashNext() + "</div>";
+        splashTimer = setInterval(() => {
+          if (splashSeq !== seq) { stopSplash(); return; }
+          const el = box.querySelector(".splash-line");
+          if (el) el.textContent = splashNext();
+        }, 1600);
+      }
       let lookupSeq = 0;
       async function scoutAndRender(params) {
         const err = $("#lookupError");
         const box = $("#scoutResult");
         const my = ++lookupSeq;
         if (err) err.hidden = true;
-        box.innerHTML = '<div class="intel-empty">SCOUTING — pulling the match history…</div>';
+        startSplash(box, my);
         try {
           const p = await fetchProfile(params);
           if (my !== lookupSeq) return;
+          stopSplash();
           renderDossier(p);
         } catch (e) {
           if (my !== lookupSeq) return;
+          stopSplash();
           box.innerHTML = '<div class="intel-empty">NO DOSSIER OPEN — enter a Riot ID above to pull a player\'s file.</div>';
           if (err) { err.hidden = false; err.textContent = lookupErrorMessage(e && e.message); }
         }
@@ -2892,7 +3066,7 @@
             const t = lobby.teammates[parseInt(b.dataset.liveIdx, 10)];
             setScoutMode("lookup");
             scoutPlayerRef(t, $("#liveError"));
-            $("#viewScout").scrollIntoView({ block: "start" });
+            $("#viewSearch").scrollIntoView({ block: "start" });
           }));
         if (actions) {
           actions.hidden = !lobby.me;
@@ -2901,7 +3075,7 @@
             meBtn.onclick = () => {
               setScoutMode("lookup");
               scoutPlayerRef(lobby.me, $("#liveError"));
-              $("#viewScout").scrollIntoView({ block: "start" });
+              $("#viewSearch").scrollIntoView({ block: "start" });
             };
           }
         }
@@ -3039,7 +3213,7 @@
             if (!s) return;
             setScoutMode("lookup");
             renderDossier(s.p);
-            $("#viewScout").scrollIntoView({ block: "start" });
+            $("#viewSearch").scrollIntoView({ block: "start" });
           }));
       }
       /* ----- Scout me (manual Slot 1) + lobby import (bridge paste / link) ----- */
@@ -3058,7 +3232,7 @@
         setScoutMode("lookup");
         $("#scoutId").value = idv;
         scoutAndRender({ name: parsed.name, tag: parsed.tag, platform: $("#scoutRegion").value });
-        $("#viewScout").scrollIntoView({ block: "start" });
+        $("#viewSearch").scrollIntoView({ block: "start" });
       }
       const LOBBY_ROLE_ALIASES = { top: "top", jungle: "jungle", jg: "jungle", mid: "mid", middle: "mid", adc: "adc", bottom: "adc", bot: "adc", support: "support", sup: "support" };
       function fillLobbyRows(list) {
@@ -3130,25 +3304,25 @@
       }
       /* ----- Tabs & modes ----- */
       function setView(view) {
-        const scout = view === "scout";
-        document.body.dataset.view = view;
-        $("#viewRankings").hidden = scout;
-        $("#viewScout").hidden = !scout;
-        $("#tabRankings").setAttribute("aria-selected", String(!scout));
-        $("#tabScout").setAttribute("aria-selected", String(scout));
+        // Four contained views; "scout" stays as an alias for Player Search
+        // for the older call sites and bridge links.
+        const v = view === "scout" ? "search" : view;
+        document.body.dataset.view = v;
+        const views = { rankings: "#viewRankings", draft: "#viewDraft", search: "#viewSearch", lobby: "#viewLobby" };
+        const tabs = { rankings: "#tabRankings", draft: "#tabDraft", search: "#tabSearch", lobby: "#tabLobby" };
+        for (const k in views) { const el = $(views[k]); if (el) el.hidden = k !== v; }
+        for (const k in tabs) { const el = $(tabs[k]); if (el) el.setAttribute("aria-selected", String(k === v)); }
       }
+      // Player Search and Lobby are separate top-level tabs now; this shim
+      // keeps the older mode-switch call sites working unchanged.
       function setScoutMode(mode) {
-        const lobby = mode === "lobby";
-        $("#paneLookup").hidden = lobby;
-        $("#paneLobby").hidden = !lobby;
-        $("#modeLookup").setAttribute("aria-pressed", String(!lobby));
-        $("#modeLobby").setAttribute("aria-pressed", String(lobby));
+        setView(mode === "lobby" ? "lobby" : "search");
       }
       function initScout() {
         $("#tabRankings").addEventListener("click", () => setView("rankings"));
-        $("#tabScout").addEventListener("click", () => setView("scout"));
-        $("#modeLookup").addEventListener("click", () => setScoutMode("lookup"));
-        $("#modeLobby").addEventListener("click", () => setScoutMode("lobby"));
+        $("#tabDraft").addEventListener("click", () => setView("draft"));
+        $("#tabSearch").addEventListener("click", () => setView("search"));
+        $("#tabLobby").addEventListener("click", () => setView("lobby"));
         $("#lookupForm").addEventListener("submit", (e) => { e.preventDefault(); runLookup(); });
         buildLobbyRows();
         renderLiveLobby();
