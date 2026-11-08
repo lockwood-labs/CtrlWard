@@ -15,6 +15,11 @@ Double-click the .exe (or run `python app.py`) and it:
 READ-ONLY, permanently: this app never picks, hovers, locks, bans, accepts or
 dodges anything. It only reads. Same design boundary as the bridge script.
 
+Optional and off by default: a prototype in-game CS overlay that reads the
+local player's OWN creep score from Riot's Live Client Data API on this
+machine and shows CS and CS/min in a small always-on-top window while a
+game runs. Display only — no other player's live stats, no advice.
+
 No Riot API key. No third-party packages. Python 3.9+ standard library only.
 
 Modes:
@@ -90,7 +95,7 @@ CACHE_DIR = os.path.join(app_dir(), "asset_cache")
 # or bake it into DEFAULT_UPDATE_REPO at build time. Empty = checks disabled.
 # ---------------------------------------------------------------------------
 
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.3.2"
 DEFAULT_UPDATE_REPO = "lockwood-labs/CtrlWard"
 
 def load_update_repo():
@@ -411,6 +416,8 @@ STATE = {
     "draft": None,
     "lobby": {"inChampSelect": False, "teammates": [], "me": None},
     "message": "Starting…",
+    "overlay": {"enabled": False, "inGame": False, "cs": None,
+                "csPerMin": None, "gameTimeSec": None},
     "app_version": APP_VERSION,
     "update": None,           # {version, url, tool_downloaded} when a newer release exists
     "appUpdate": None,        # {available: v} / {pendingRestart: v} — exe self-update state
@@ -482,6 +489,7 @@ def load_settings():
     if not isinstance(settings, dict):
         settings = {}
     settings.setdefault("telemetry_enabled", False)
+    settings.setdefault("overlay_enabled", False)
     if not settings.get("install_id"):
         settings["install_id"] = str(uuid.uuid4())
         _write_json_file(SETTINGS_PATH, settings)
@@ -497,6 +505,13 @@ def telemetry_enabled():
 
 def set_telemetry_enabled(on):
     SETTINGS["telemetry_enabled"] = bool(on)
+    _write_json_file(SETTINGS_PATH, SETTINGS)
+
+def overlay_enabled():
+    return bool(SETTINGS.get("overlay_enabled"))
+
+def set_overlay_enabled(on):
+    SETTINGS["overlay_enabled"] = bool(on)
     _write_json_file(SETTINGS_PATH, SETTINGS)
 
 def telemetry_post(path, payload):
@@ -554,6 +569,269 @@ def lookup_proxy(query):
         return json.dumps({"error": "lookup_unreachable"}).encode()
     except Exception:
         return json.dumps({"error": "lookup_unreachable"}).encode()
+
+# ---------------------------------------------------------------------------
+# In-game CS overlay (prototype, opt-in, OFF by default)
+#
+# When the user ticks "In-game CS overlay (prototype)" in the app
+# window, a background poller reads Riot's Live Client Data API on
+# THIS machine (https://127.0.0.1:2999/liveclientdata — the loopback
+# interface broadcast tools use; its certificate is self-signed, so
+# an unverified SSL context is correct here) once a second and
+# publishes ONLY the local player's own numbers: creep score,
+# CS/min, and the game clock. No other player's live stats are read
+# into state, displayed, or logged — the scoreboard reveals enemy
+# numbers only when you look, and this overlay does not change that.
+# A tiny always-on-top window (Windows builds) paints the numbers;
+# it is display-only: no pace warnings, no verdicts, no colours that
+# imply good or bad. The live path has no fallback data: when the
+# endpoint is silent the state honestly says "not in game". The one
+# simulated feed lives behind --demo (demo_overlay_sample below),
+# exactly like the demo champ select.
+# ---------------------------------------------------------------------------
+
+LIVE_CLIENT_BASE = "https://127.0.0.1:2999/liveclientdata"
+OVERLAY_MIN_RATE_SECONDS = 30.0   # a CS/min over the walk to lane is noise
+
+_OVERLAY_LIVE = {"inGame": False, "cs": None, "csPerMin": None,
+                 "gameTimeSec": None}
+_OVERLAY_LIVE_LOCK = threading.Lock()
+_DEMO_OVERLAY_START = {"at": None}
+
+def compute_cs_per_min(creep_score, game_time):
+    """CS/min for the overlay: creep score over elapsed game minutes.
+    None until the game is at least 30 seconds old."""
+    if game_time is None or game_time < OVERLAY_MIN_RATE_SECONDS:
+        return None
+    return round(creep_score / (game_time / 60.0), 1)
+
+def format_game_clock(game_time):
+    total = int(game_time or 0)
+    return f"{total // 60}:{total % 60:02d}"
+
+def _identity_full_ids(obj):
+    out = set()
+    for field in ("riotId", "summonerName"):
+        value = (obj or {}).get(field)
+        if value:
+            out.add(str(value).strip().lower())
+    return out
+
+def _identity_game_name(obj):
+    value = (obj or {}).get("riotIdGameName")
+    return str(value).strip().lower() if value else ""
+
+def match_local_player(all_players, active):
+    """The local player's own entry in allPlayers, identified via the
+    activeplayer response. Full Riot IDs (riotId / summonerName) are
+    matched first; the bare game name (riotIdGameName) is accepted
+    only when exactly one entry carries it — game names alone are
+    not unique. None when the local player can't be identified with
+    confidence."""
+    full_ids = _identity_full_ids(active)
+    game_name = _identity_game_name(active)
+    entries = [e for e in (all_players or []) if isinstance(e, dict)]
+    for entry in entries:
+        if _identity_full_ids(entry) & full_ids:
+            return entry
+    if game_name:
+        named = [e for e in entries
+                 if _identity_game_name(e) == game_name]
+        if len(named) == 1:
+            return named[0]
+    return None
+
+def overlay_sample_from(all_data, active):
+    """The overlay sample from Live Client Data payloads, or None
+    when the local player can't be identified. Reads ONLY the
+    matched player's scores.creepScore — nothing from any other
+    player's entry is copied, returned, or stored."""
+    if not isinstance(all_data, dict):
+        return None
+    game_time = (all_data.get("gameData") or {}).get("gameTime")
+    if not isinstance(game_time, (int, float)):
+        return None
+    entry = match_local_player(all_data.get("allPlayers"), active)
+    if entry is None:
+        return None
+    creep = (entry.get("scores") or {}).get("creepScore")
+    if not isinstance(creep, (int, float)):
+        return None
+    creep = int(creep)
+    game_time = float(game_time)
+    return {"cs": creep,
+            "csPerMin": compute_cs_per_min(creep, game_time),
+            "gameTimeSec": game_time}
+
+def _lcd_get(path, timeout=1.5):
+    req = urllib.request.Request(
+        LIVE_CLIENT_BASE + path,
+        headers={"User-Agent": "CtrlWard/" + APP_VERSION})
+    ctx = ssl._create_unverified_context()  # self-signed loopback cert
+    with urllib.request.urlopen(req, context=ctx, timeout=timeout) as r:
+        return json.load(r)
+
+def fetch_live_overlay_sample():
+    """One live read of the local player's CS state. Raises when the
+    endpoint is unreachable (not in a game) — callers treat every
+    failure as "not in game", never as an error worth showing."""
+    active = _lcd_get("/activeplayer")
+    all_data = _lcd_get("/allgamedata")
+    return overlay_sample_from(all_data, active)
+
+def demo_overlay_sample(elapsed):
+    """DEMO ONLY — the simulated game feed behind --demo: game time
+    advancing from zero, CS accruing at a plausible 7.3/min. This is
+    the only fabricated game data in the app; it exists so the
+    overlay state can be exercised without League, and the live path
+    never calls it (the same rule as the demo champ select)."""
+    game_time = max(0.0, min(float(elapsed), 3600.0))
+    creep = int(7.3 * (game_time / 60.0))
+    return {"cs": creep,
+            "csPerMin": compute_cs_per_min(creep, game_time),
+            "gameTimeSec": game_time}
+
+def _publish_overlay():
+    with _OVERLAY_LIVE_LOCK:
+        live = dict(_OVERLAY_LIVE)
+    set_state(overlay={"enabled": overlay_enabled(),
+                       "inGame": live["inGame"], "cs": live["cs"],
+                       "csPerMin": live["csPerMin"],
+                       "gameTimeSec": live["gameTimeSec"]})
+
+def _set_overlay_live(sample):
+    with _OVERLAY_LIVE_LOCK:
+        if sample is None:
+            _OVERLAY_LIVE.update({"inGame": False, "cs": None,
+                                  "csPerMin": None, "gameTimeSec": None})
+        else:
+            _OVERLAY_LIVE.update({"inGame": True, "cs": sample["cs"],
+                                  "csPerMin": sample["csPerMin"],
+                                  "gameTimeSec": sample["gameTimeSec"]})
+    _publish_overlay()
+
+def _overlay_poll_once():
+    """One overlay poll step. With the toggle off there is no network
+    traffic and no window — the published state simply says so."""
+    if not overlay_enabled():
+        _set_overlay_live(None)
+        return
+    if DEMO_MODE["on"]:
+        start = _DEMO_OVERLAY_START["at"]
+        elapsed = time.time() - start if start else 0.0
+        _set_overlay_live(demo_overlay_sample(elapsed))
+        return
+    try:
+        sample = fetch_live_overlay_sample()
+    except Exception:
+        sample = None  # endpoint silent = not in a game; not an error
+    _set_overlay_live(sample)
+
+def overlay_poller():
+    """Background overlay poller (daemon thread). Cheap when idle:
+    with the toggle off it only keeps the published flag honest."""
+    _DEMO_OVERLAY_START["at"] = time.time()
+    if DEMO_MODE["on"]:
+        print("[demo] Simulated CS overlay feed running (demo only — "
+              "the live overlay reads the real game).")
+    while True:
+        try:
+            _overlay_poll_once()
+        except Exception:
+            pass
+        time.sleep(1.0)
+
+# --- The overlay window: a thin shell over the published overlay
+# --- state. Every decision (enabled? in a game? which numbers?) is
+# --- made by the poller above; this only paints. Windows only, and
+# --- every step is guarded so a missing or broken tkinter can never
+# --- take the app down with it.
+
+OVERLAY_CHROMA = "#010203"  # chroma key: this exact colour turns transparent
+
+def _overlay_click_through(root):
+    """Best-effort click-through + no-activate via the Win32 extended
+    window styles. Any failure just leaves a normal (still tiny,
+    still harmless) always-on-top window."""
+    try:
+        import ctypes
+        user32 = ctypes.windll.user32
+        hwnd = user32.GetParent(root.winfo_id()) or root.winfo_id()
+        style = user32.GetWindowLongW(hwnd, -20)  # GWL_EXSTYLE
+        user32.SetWindowLongW(
+            hwnd, -20,
+            style | 0x00080000 | 0x00000020 | 0x08000000)
+        # WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE
+    except Exception:
+        pass
+
+def overlay_window_loop():
+    """Own the tkinter overlay window on its own thread (every Tk
+    call happens here). No-ops off Windows and without tkinter."""
+    if sys.platform != "win32":
+        return
+    try:
+        import tkinter as tk
+    except Exception:
+        return  # no tk in this build — the feature disables itself
+    try:
+        root = tk.Tk()
+        root.title("CtrlWard CS overlay")
+        root.overrideredirect(True)
+        root.configure(bg=OVERLAY_CHROMA)
+        try:
+            root.attributes("-transparentcolor", OVERLAY_CHROMA)
+        except Exception:
+            pass
+        root.attributes("-topmost", True)
+        main_var = tk.StringVar(value="")
+        rate_var = tk.StringVar(value="")
+        clock_var = tk.StringVar(value="")
+        frame = tk.Frame(root, bg=OVERLAY_CHROMA)
+        frame.pack(padx=6, pady=3)
+        tk.Label(frame, textvariable=main_var, bg=OVERLAY_CHROMA,
+                 fg="#f5eeda",
+                 font=("Segoe UI", 15, "bold")).pack(side="left")
+        tk.Label(frame, textvariable=rate_var, bg=OVERLAY_CHROMA,
+                 fg="#ff4655",
+                 font=("Segoe UI", 15, "bold")).pack(side="left")
+        tk.Label(root, textvariable=clock_var, bg=OVERLAY_CHROMA,
+                 fg="#cbb8c4", font=("Segoe UI", 9)).pack(anchor="e",
+                                                         padx=6)
+        root.withdraw()
+        root.update_idletasks()
+        _overlay_click_through(root)
+        shown = {"on": False}
+
+        def refresh():
+            try:
+                snap = get_state().get("overlay") or {}
+                if (snap.get("enabled") and snap.get("inGame")
+                        and snap.get("cs") is not None):
+                    main_var.set(f"CS {snap['cs']}")
+                    rate = snap.get("csPerMin")
+                    rate_var.set(f" · {rate:.1f}/min"
+                                 if rate is not None else "")
+                    clock_var.set("@ " + format_game_clock(
+                        snap.get("gameTimeSec")))
+                    if not shown["on"]:
+                        shown["on"] = True
+                        root.deiconify()
+                        root.update_idletasks()
+                        width = root.winfo_reqwidth()
+                        root.geometry(
+                            f"+{root.winfo_screenwidth() - width - 18}+18")
+                elif shown["on"]:
+                    shown["on"] = False
+                    root.withdraw()
+            except Exception:
+                pass
+            root.after(250, refresh)
+
+        root.after(250, refresh)
+        root.mainloop()
+    except Exception:
+        return
 
 # --- Top 3 snapshots: the page reports its current recommendations to
 # --- this local server; they are kept only if they describe the draft
@@ -1299,28 +1577,42 @@ LIVE_SCRIPT = """
     'background:#0b0e1a;color:#aeb6cc;border:1px solid #2a3049;' +
     'font:500 11px/1.45 system-ui,sans-serif;padding:7px 10px;border-radius:4px;' +
     'letter-spacing:.02em;opacity:.94';
-  tel.textContent = 'Loading sharing settings…';
+  tel.textContent = 'Loading settings…';
   document.body.appendChild(tel);
-  function renderTelemetry(s){
+  function renderSettings(s){
+    var html = '';
     if(!s.available){
-      tel.innerHTML = '<b style="color:#e8ecf8">Anonymous draft sharing</b><br>' +
+      html += '<b style="color:#e8ecf8">Anonymous draft sharing</b><br>' +
         'Not configured in this build — nothing is shared.';
-      return;
+    } else {
+      html += '<label style="display:flex;gap:7px;align-items:flex-start;cursor:pointer">' +
+        '<input type="checkbox" id="cw-tel-check"' + (s.enabled ? ' checked' : '') +
+        ' style="margin-top:1px"> <span><b style="color:#e8ecf8">Share anonymous draft data</b><br>' +
+        'One record per finished draft: date, role, queue, the champions picked, ' +
+        'the Top 3 shown here, and the game\\'s win/loss. No names, no Riot IDs, ' +
+        'no timestamps. Off by default; nothing is sent unless you opt in.</span></label>';
     }
-    tel.innerHTML = '<label style="display:flex;gap:7px;align-items:flex-start;cursor:pointer">' +
-      '<input type="checkbox" id="cw-tel-check"' + (s.enabled ? ' checked' : '') +
-      ' style="margin-top:1px"> <span><b style="color:#e8ecf8">Share anonymous draft data</b><br>' +
-      'One record per finished draft: date, role, queue, the champions picked, ' +
-      'the Top 3 shown here, and the game\\'s win/loss. No names, no Riot IDs, ' +
-      'no timestamps. Off by default; nothing is sent unless you opt in.</span></label>';
+    html += '<div style="border-top:1px solid #2a3049;margin:8px 0 7px"></div>' +
+      '<label style="display:flex;gap:7px;align-items:flex-start;cursor:pointer">' +
+      '<input type="checkbox" id="cw-overlay-check"' + (s.overlay_enabled ? ' checked' : '') +
+      ' style="margin-top:1px"> <span><b style="color:#e8ecf8">In-game CS overlay (prototype)</b><br>' +
+      'A small always-on-top window showing only your own CS and CS/min while ' +
+      'you play — display only, no advice, no other players\\' numbers. League ' +
+      'must be in Borderless mode. Off by default.</span></label>';
+    tel.innerHTML = html;
     var box = document.getElementById('cw-tel-check');
     if(box) box.addEventListener('change', function(){
       fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({telemetry_enabled: box.checked})}).catch(function(){});
     });
+    var obox = document.getElementById('cw-overlay-check');
+    if(obox) obox.addEventListener('change', function(){
+      fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({overlay_enabled: obox.checked})}).catch(function(){});
+    });
   }
   fetch('/api/settings').then(function(r){ return r.json(); })
-    .then(renderTelemetry).catch(function(){ tel.style.display = 'none'; });
+    .then(renderSettings).catch(function(){ tel.style.display = 'none'; });
   function chipNames(id){
     var out = [], els = document.querySelectorAll('#' + id + ' .draft-slot.filled .slot-name');
     for(var i = 0; i < els.length; i++) out.push(els[i].textContent.trim());
@@ -1445,7 +1737,8 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/settings":
                 body = json.dumps({
                     "available": telemetry_available(),
-                    "enabled": telemetry_enabled()}).encode()
+                    "enabled": telemetry_enabled(),
+                    "overlay_enabled": overlay_enabled()}).encode()
                 self._send(200, body, "application/json")
             elif path.startswith("/assets/champs/") or path.startswith("/assets/loading/"):
                 kind = "champs" if "/champs/" in path else "loading"
@@ -1479,9 +1772,13 @@ class Handler(BaseHTTPRequestHandler):
             if parsed.path == "/api/settings":
                 if "telemetry_enabled" in data:
                     set_telemetry_enabled(bool(data["telemetry_enabled"]))
+                if "overlay_enabled" in data:
+                    set_overlay_enabled(bool(data["overlay_enabled"]))
+                    _publish_overlay()
                 body = json.dumps({
                     "available": telemetry_available(),
-                    "enabled": telemetry_enabled()}).encode()
+                    "enabled": telemetry_enabled(),
+                    "overlay_enabled": overlay_enabled()}).encode()
                 self._send(200, body, "application/json")
             elif parsed.path == "/api/top3":
                 stored = store_top3(data)
@@ -1593,6 +1890,14 @@ def main():
     poller.start()
 
     threading.Thread(target=check_for_updates, daemon=True).start()
+
+    # In-game CS overlay (prototype): a background poller plus, on
+    # Windows, the little always-on-top window. Both stay inert
+    # unless the user enables the overlay in the settings panel;
+    # the window loop also no-ops off Windows / without tkinter.
+    _publish_overlay()
+    threading.Thread(target=overlay_poller, daemon=True).start()
+    threading.Thread(target=overlay_window_loop, daemon=True).start()
 
     # Outcome backfill for telemetry (no-ops unless the user opted in
     # and a report endpoint is configured).

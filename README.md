@@ -52,6 +52,15 @@ previous version beside it as `CtrlWard.exe.bak`. To roll back, close the
 app and rename `CtrlWard.exe.bak` over `CtrlWard.exe`. v1.3.0 itself is
 the last manual download — every release after it arrives on its own.
 
+## In-game CS overlay (prototype)
+
+Optional and off by default: enable **In-game CS overlay (prototype)** in
+the app window's settings panel and a tiny always-on-top window shows your
+own CS and CS/min while you play, read from Riot's Live Client Data API on
+your own machine. Only your numbers — never another player's live stats —
+and display only: no coaching, no warnings. Requires League in Borderless
+window mode.
+
 ## Build from source
 
 Prefer not to run a prebuilt .exe? Everything is here:
